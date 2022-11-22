@@ -6,8 +6,8 @@ const test_data = @import("combinations_test_data.zig").data;
 test "test slips" {
     if (true) return error.SkipZigTest;
 
-    var no: usize = 0;
-    while (no < 1) : (no += 1) {
+    var runs: usize = 1;
+    while (runs > 0) : (runs -= 1) {
         for (test_data) |d| {
             const r: u6 = d.r;
             const n: u6 = @intCast(u6, d.prices.len);
