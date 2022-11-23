@@ -23,10 +23,9 @@ pub fn main() !void {
 }
 
 // Sum of products of all combinations.
-// Combinations of n things taken r at the time.
+// Combinations of n items taken r at the time.
 fn sumOfProducts(items: []const f64, r: usize) f64 {
     const n = items.len;
-
     // handle simple r==1 and r==n cases
     if (r == 1) {
         return sumAll(items);
@@ -55,13 +54,13 @@ fn mulAll(items: []const f64) f64 {
     return s;
 }
 
-fn sumOfProductsRec(items: []const f64, r: usize, depth: usize, start_pos: usize, m: f64) f64 {
+fn sumOfProductsRec(items: []const f64, r: usize, depth: usize, start_pos: usize, prod: f64) f64 {
     const n = items.len;
     var s: f64 = 0;
     var i = start_pos;
     while (i <= n - r + depth) : (i += 1) {
-        const new_m = m * items[i];
-        s += if (depth == r - 1) new_m else sumOfProductsRec(items, r, depth + 1, i + 1, new_m);
+        const new_prod = prod * items[i];
+        s += if (depth == r - 1) new_prod else sumOfProductsRec(items, r, depth + 1, i + 1, new_prod);
     }
     return s;
 }
