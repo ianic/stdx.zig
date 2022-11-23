@@ -24,56 +24,57 @@ pub fn main() !void {
 
 // Sum of products of all combinations.
 // Combinations of n things taken r at the time.
-fn sumOfProducts(prices: []const f64, r: u8) f64 {
-    const n: u8 = @intCast(u8, prices.len);
+fn sumOfProducts(items: []const f64, r: usize) f64 {
+    const n = items.len;
 
     // handle simple r==1 and r==n cases
     if (r == 1) {
-        return sumSlice(prices);
+        return sumAll(items);
     } else if (r == n) {
-        return mulSlice(prices);
+        return mulAll(items);
     }
-    // all other
-    return sumOfProductsRec(prices, r, n, 0, 0, 1);
+    // all other cases
+    return sumOfProductsRec(items, r, 0, 0, 1);
 }
 
-fn sumSlice(prices: []const f64) f64 {
-    var i: usize = 0;
-    var s: f64 = 0;
-    while (i < prices.len) : (i += 1) {
-        s += prices[i];
-    }
-    return s;
-}
-
-fn mulSlice(prices: []const f64) f64 {
-    var s = prices[0];
+fn sumAll(items: []const f64) f64 {
+    var s: f64 = items[0];
     var i: usize = 1;
-    while (i < prices.len) : (i += 1) {
-        s *= prices[i];
+    while (i < items.len) : (i += 1) {
+        s += items[i];
     }
     return s;
 }
 
-fn sumOfProductsRec(prices: []const f64, r: u8, n: u8, depth: u8, start_pos: u8, m: f64) f64 {
+fn mulAll(items: []const f64) f64 {
+    var s = items[0];
+    var i: usize = 1;
+    while (i < items.len) : (i += 1) {
+        s *= items[i];
+    }
+    return s;
+}
+
+fn sumOfProductsRec(items: []const f64, r: usize, depth: usize, start_pos: usize, m: f64) f64 {
+    const n = items.len;
     var s: f64 = 0;
-    var i: u8 = start_pos;
+    var i = start_pos;
     while (i <= n - r + depth) : (i += 1) {
-        const new_m = m * prices[i];
-        s += if (depth == r - 1) new_m else sumOfProductsRec(prices, r, n, depth + 1, i + 1, new_m);
+        const new_m = m * items[i];
+        s += if (depth == r - 1) new_m else sumOfProductsRec(items, r, depth + 1, i + 1, new_m);
     }
     return s;
 }
 
 test "2/4" {
-    const prices = [_]f64{ 1, 2, 3, 4 };
-    const sp = sumOfProducts(&prices, 2);
+    const items = [_]f64{ 1, 2, 3, 4 };
+    const sp = sumOfProducts(&items, 2);
     try std.testing.expectEqual(sp, 35);
 }
 
 test "3/5" {
-    const prices = [_]f64{ 1, 2, 3, 4, 5 };
-    const sp = sumOfProducts(&prices, 3);
+    const items = [_]f64{ 1, 2, 3, 4, 5 };
+    const sp = sumOfProducts(&items, 3);
     try std.testing.expectEqual(sp, 225);
 }
 
