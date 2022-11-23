@@ -33,7 +33,7 @@ fn sumOfProducts(items: []const f64, r: usize) f64 {
         return mulAll(items);
     }
     // all other cases
-    return sumOfProductsRec(items, r, 0, 0, 1);
+    return sumOfProductsRec(items, r - 1, n, 1);
 }
 
 fn sumAll(items: []const f64) f64 {
@@ -54,13 +54,12 @@ fn mulAll(items: []const f64) f64 {
     return s;
 }
 
-fn sumOfProductsRec(items: []const f64, r: usize, depth: usize, start_pos: usize, prod: f64) f64 {
-    const n = items.len;
+fn sumOfProductsRec(items: []const f64, start_pos: usize, end_pos: usize, prod: f64) f64 {
     var s: f64 = 0;
     var i = start_pos;
-    while (i <= n - r + depth) : (i += 1) {
+    while (i < end_pos) : (i += 1) {
         const new_prod = prod * items[i];
-        s += if (depth == r - 1) new_prod else sumOfProductsRec(items, r, depth + 1, i + 1, new_prod);
+        s += if (start_pos == 0) new_prod else sumOfProductsRec(items, start_pos - 1, i, new_prod);
     }
     return s;
 }
