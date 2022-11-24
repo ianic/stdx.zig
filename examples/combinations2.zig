@@ -11,7 +11,7 @@ pub fn main() !void {
     while (rns > 0) : (rns -= 1) {
         for (test_data) |d| {
             const p = sumOfProducts(d.prices, d.r);
-            const w = p * d.stake / @intToFloat(f64, binCoeff(d.r, d.prices.len));
+            const w = p * d.stake / @intToFloat(f64, binomial(d.r, d.prices.len));
             try std.testing.expect(@fabs(w - d.winning) < 0.1);
             sum += w;
         }
@@ -87,7 +87,7 @@ test "first data row" {
 test "all data rows" {
     for (test_data) |d, i| {
         const p = sumOfProducts(d.prices, d.r);
-        const w = p * d.stake / @intToFloat(f64, binCoeff(d.r, d.prices.len));
+        const w = p * d.stake / @intToFloat(f64, binomial(d.r, d.prices.len));
 
         const expect = @fabs(w - d.winning) < 0.1;
         if (!expect) {
@@ -127,10 +127,6 @@ fn calcPascalTriangle() [PT_SIZE]usize {
     return k;
 }
 
-pub fn binCoeff(r: usize, n: usize) usize {
-    return PASCAL_TRIANGLE[position(r, n)];
-}
-
 fn position(r: usize, n: usize) usize {
     std.debug.assert(r <= n);
     std.debug.assert(n <= MAX_N);
@@ -161,26 +157,59 @@ test "print pascal triangle" {
         if (i == 1)
             std.debug.print("\n", .{});
     }
-    std.debug.print("max: {d}\n", .{binCoeff(MAX_N / 2, MAX_N)});
+    std.debug.print("max: {d}\n", .{binomial(MAX_N / 2, MAX_N)});
 }
 
 const expectEqual = std.testing.expectEqual;
 
-test "binCoeff" {
-    try expectEqual(binCoeff(1, 1), 1);
-    try expectEqual(binCoeff(1, 2), 2);
-    try expectEqual(binCoeff(2, 2), 1);
-    try expectEqual(binCoeff(1, 3), 3);
-    try expectEqual(binCoeff(2, 3), 3);
-    try expectEqual(binCoeff(3, 3), 1);
+test "binomial" {
+    try expectEqual(binomial(1, 1), 1);
+    try expectEqual(binomial(1, 2), 2);
+    try expectEqual(binomial(2, 2), 1);
+    try expectEqual(binomial(1, 3), 3);
+    try expectEqual(binomial(2, 3), 3);
+    try expectEqual(binomial(3, 3), 1);
 
-    try expectEqual(binCoeff(1, 7), 7);
-    try expectEqual(binCoeff(2, 7), 21);
-    try expectEqual(binCoeff(3, 7), 35);
-    try expectEqual(binCoeff(4, 7), 35);
+    try expectEqual(binomial(1, 7), 7);
+    try expectEqual(binomial(2, 7), 21);
+    try expectEqual(binomial(3, 7), 35);
+    try expectEqual(binomial(4, 7), 35);
 
-    try expectEqual(binCoeff(8, 19), 75582);
-    try expectEqual(binCoeff(9, 19), 92378);
-    try expectEqual(binCoeff(12, 19), 50388);
-    try expectEqual(binCoeff(13, 19), 27132);
+    try expectEqual(binomial(8, 19), 75582);
+    try expectEqual(binomial(9, 19), 92378);
+    try expectEqual(binomial(12, 19), 50388);
+    try expectEqual(binomial(13, 19), 27132);
+
+    try expectEqual(binomial(16, 33), 1166803110);
+    try expectEqual(binomial(32, 64), 1832624140942590534);
 }
+
+pub fn binomial(r: usize, n: usize) usize {
+    return PASCAL_TRIANGLE[position(r, n)];
+    // alternative implementation:
+    // return binomialCalc(r, n);
+}
+
+// from fxtbook 6.1.
+pub fn binomialCalc(r: usize, n: usize) usize {
+    var k = r;
+
+    if (k > n) return 0;
+    if ((k == 0) or (k == n)) return 1;
+    if (k > n / 2) {
+        k = n - k;
+    } // use symmetry
+
+    var b: usize = n - k + 1;
+    var f: usize = b;
+    var j: usize = 2;
+    while (j <= k) : (j += 1) {
+        f += 1;
+        b *= f;
+        b /= j;
+    }
+    return b;
+}
+
+// for readme:
+// fxtbook: https://www.jjj.de/fxt/#fxtbook
