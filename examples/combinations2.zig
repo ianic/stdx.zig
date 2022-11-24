@@ -5,13 +5,13 @@ const test_data = @import("combinations_test_data.zig").data;
 
 pub fn main() !void {
     const start = std.time.nanoTimestamp();
-    const runs: usize = 562;
+    const runs: usize = 2246;
     var rns = runs;
     var sum: f64 = 0;
     while (rns > 0) : (rns -= 1) {
         for (test_data) |d| {
             const p = sumOfProducts(d.prices, d.r);
-            const w = p * d.stake / @intToFloat(f64, count(d.r, @intCast(u8, d.prices.len)));
+            const w = p * d.stake / @intToFloat(f64, binCoeff(d.r, d.prices.len));
             try std.testing.expect(@fabs(w - d.winning) < 0.1);
             sum += w;
         }
@@ -24,9 +24,10 @@ pub fn main() !void {
 
 // Sum of products of all combinations.
 // Combinations of n items taken r at the time.
-fn sumOfProducts(items: []const f64, r: usize) f64 {
+pub fn sumOfProducts(items: []const f64, r: usize) f64 {
     const n = items.len;
     // handle simple r==1 and r==n cases
+    // not necessary tiny optimization
     if (r == 1) {
         return sumAll(items);
     } else if (r == n) {
@@ -86,7 +87,7 @@ test "first data row" {
 test "all data rows" {
     for (test_data) |d, i| {
         const p = sumOfProducts(d.prices, d.r);
-        const w = p * d.stake / @intToFloat(f64, count(d.r, @intCast(u8, d.prices.len)));
+        const w = p * d.stake / @intToFloat(f64, binCoeff(d.r, d.prices.len));
 
         const expect = @fabs(w - d.winning) < 0.1;
         if (!expect) {
@@ -96,29 +97,18 @@ test "all data rows" {
     }
 }
 
-test "one" {
-    const i = 307;
+const PASCAL_TRIANGLE = calcPascalTriangle();
+const MAX_N = 64;
+const PT_SIZE = (MAX_N * (MAX_N + 1)) / 2;
 
-    const d = test_data[i];
-    const p = sumOfProducts(d.prices, d.r);
-    const w = p * d.stake / @intToFloat(f64, count(d.r, @intCast(u8, d.prices.len)));
+fn calcPascalTriangle() [PT_SIZE]usize {
+    @setEvalBranchQuota(10_000);
+    var k = [_]usize{1} ** PT_SIZE;
 
-    const expect = @fabs(w - d.winning) < 0.1;
-    if (!expect) {
-        std.debug.print("case {d} failed, w: {d} {d}\n", .{ i, w, d.winning });
-    }
-    try std.testing.expect(expect);
-}
-
-const pt = pascalTriangle();
-
-fn pascalTriangle() [210]u32 {
-    var k = [_]u32{1} ** 210;
-
-    var n: u8 = 0;
-    var i: u32 = 0;
-    while (n <= 20) : (n += 1) {
-        var r: u8 = 0;
+    var n: usize = 0;
+    var i: usize = 0;
+    while (n <= MAX_N) : (n += 1) {
+        var r: usize = 0;
         while (r < n) : ({
             r += 1;
             i += 1;
@@ -137,13 +127,13 @@ fn pascalTriangle() [210]u32 {
     return k;
 }
 
-fn count(r: u8, n: u8) u32 {
-    return pt[position(r, n)];
+pub fn binCoeff(r: usize, n: usize) usize {
+    return PASCAL_TRIANGLE[position(r, n)];
 }
 
-fn position(r: u8, n: u8) u8 {
+fn position(r: usize, n: usize) usize {
     std.debug.assert(r <= n);
-    std.debug.assert(n <= 20);
+    std.debug.assert(n <= MAX_N);
     std.debug.assert(n > 0);
     std.debug.assert(r > 0);
 
@@ -158,6 +148,39 @@ fn position(r: u8, n: u8) u8 {
         8 => return r + 27,
         9 => return r + 35,
         10 => return r + 44,
-        else => return @intCast(u8, ((@intCast(u16, n) * (@intCast(u16, n) - 1)) / 2) + r - 1),
+        else => return ((n * (n - 1)) / 2) + r - 1,
     }
+}
+
+test "print pascal triangle" {
+    if (true) return error.SkipZigTest;
+
+    std.debug.print("\n", .{});
+    for (PASCAL_TRIANGLE) |i| {
+        std.debug.print("{d} ", .{i});
+        if (i == 1)
+            std.debug.print("\n", .{});
+    }
+    std.debug.print("max: {d}\n", .{binCoeff(MAX_N / 2, MAX_N)});
+}
+
+const expectEqual = std.testing.expectEqual;
+
+test "binCoeff" {
+    try expectEqual(binCoeff(1, 1), 1);
+    try expectEqual(binCoeff(1, 2), 2);
+    try expectEqual(binCoeff(2, 2), 1);
+    try expectEqual(binCoeff(1, 3), 3);
+    try expectEqual(binCoeff(2, 3), 3);
+    try expectEqual(binCoeff(3, 3), 1);
+
+    try expectEqual(binCoeff(1, 7), 7);
+    try expectEqual(binCoeff(2, 7), 21);
+    try expectEqual(binCoeff(3, 7), 35);
+    try expectEqual(binCoeff(4, 7), 35);
+
+    try expectEqual(binCoeff(8, 19), 75582);
+    try expectEqual(binCoeff(9, 19), 92378);
+    try expectEqual(binCoeff(12, 19), 50388);
+    try expectEqual(binCoeff(13, 19), 27132);
 }
