@@ -27,10 +27,9 @@ const CoolLex = struct {
     // Returns combination as binary string.
     // Null when there is no more combinations.
     pub fn next(self: *Self) ?usize {
-        const ret = self.current;
-        if (ret & self.limit_mask == 0) {
-            self.findNext();
-            return ret;
+        if (self.current & self.limit_mask == 0) {
+            defer self.findNext();
+            return self.current;
         }
         return null;
     }
