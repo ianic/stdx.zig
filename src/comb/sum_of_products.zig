@@ -48,6 +48,10 @@ test "all data rows" {
 }
 
 test "number of multiplications" {
+    // shows how many multiplications we had to do with this algorithm
+    // vs brute force
+    // in brute force we have to make: (number of combinations)*(r-1) multiplications
+    // in this: n|r + (n-1)|(r-1) ... (n-r+2)|2
     if (true) return error.SkipZigTest;
 
     const binomial = @import("binomial.zig").binomial;
