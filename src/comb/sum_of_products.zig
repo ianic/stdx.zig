@@ -3,21 +3,7 @@ const std = @import("std");
 pub fn Recursive(comptime T: type) type {
     return struct {
         pub fn sumOfProducts(items: []const T, r: usize) T {
-            const n = items.len;
-            //handle simple r==1 and r==n cases
-            //not necessary tiny optimization
-            if (r == 1) {
-                return r1(items);
-            } else if (r == n) {
-                return rn(items);
-            }
-            //all other cases
-            var s: T = 0;
-            var i = r - 1;
-            while (i < n) : (i += 1) {
-                s += rec(items, r - 2, i, items[i]);
-            }
-            return s;
+            return rec(items, r - 1, items.len, 1);
         }
 
         fn rec(items: []const T, start_pos: usize, end_pos: usize, prod: T) T {
@@ -26,24 +12,6 @@ pub fn Recursive(comptime T: type) type {
             while (i < end_pos) : (i += 1) {
                 const new_prod = prod * items[i];
                 s += if (start_pos == 0) new_prod else rec(items, start_pos - 1, i, new_prod);
-            }
-            return s;
-        }
-
-        fn r1(items: []const T) T {
-            var s: T = items[0];
-            var i: usize = 1;
-            while (i < items.len) : (i += 1) {
-                s += items[i];
-            }
-            return s;
-        }
-
-        fn rn(items: []const T) T {
-            var s = items[0];
-            var i: usize = 1;
-            while (i < items.len) : (i += 1) {
-                s *= items[i];
             }
             return s;
         }
