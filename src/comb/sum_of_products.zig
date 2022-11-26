@@ -7,13 +7,12 @@ pub fn Recursive(comptime T: type) type {
         }
 
         fn rec(items: []const T, start_pos: usize, end_pos: usize, prod: T) T {
-            var s: T = 0;
+            var sum: T = 0;
             var i = start_pos;
             while (i < end_pos) : (i += 1) {
-                const new_prod = prod * items[i];
-                s += if (start_pos == 0) new_prod else rec(items, start_pos - 1, i, new_prod);
+                sum += if (start_pos == 0) prod * items[i] else rec(items, start_pos - 1, i, prod * items[i]);
             }
-            return s;
+            return sum;
         }
     };
 }
