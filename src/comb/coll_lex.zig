@@ -4,6 +4,7 @@ const assert = std.debug.assert;
 // Produces (n,k)-combinations in cool-lex order.
 // Implements the cool-lex algorithm to generate (n,k)-combinations.
 // References:
+//   fxtbook(https://www.jjj.de/fxt/fxtbook.pdf) Chapter 6.3
 //   https://www.sciencedirect.com/science/article/pii/S0012365X07009570#aep-figure-id48
 //   https://news.ycombinator.com/item?id=33716358
 //   https://gist.github.com/m1el/6016b53ff20ae08712436a4b073820f2#file-bit_permutations-rs-L13

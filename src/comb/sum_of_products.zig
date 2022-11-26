@@ -74,17 +74,46 @@ test "all data rows" {
     }
 }
 
-pub fn Iterative(comptime T: type) type {
-    return struct {
-        fn r1(items: []const T) T {
-            var s: T = items[0];
-            var i: usize = 1;
-            while (i < items.len) : (i += 1) {
-                s += items[i];
+test "number of multiplications" {
+    const binomial = @import("binomial.zig").binomial;
+
+    const s = struct {
+        fn multiplications(rc: usize, nc: usize) usize {
+            var r = rc;
+            var n = nc;
+            var s: usize = 0;
+            while (r > 1) : ({
+                r -= 1;
+                n -= 1;
+            }) {
+                s += binomial(r, n);
             }
             return s;
         }
+    };
 
+    var n: usize = 3;
+    while (n <= 20) : (n += 1) {
+        var r: usize = 2;
+        while (r < n) : (r += 1) {
+            const brute_force = binomial(r, n) * (r - 1); // number of multiplications in brute force algorithm
+            const this = s.multiplications(r, n); // and in this algorithm
+
+            std.debug.print("{d}|{d}({d}) {d} {d} diff: {d} {d:.2}\n", .{
+                n,
+                r,
+                binomial(r, n),
+                brute_force,
+                this,
+                brute_force - this,
+                @intToFloat(f64, this) / @intToFloat(f64, brute_force) * 100,
+            });
+        }
+    }
+}
+
+pub fn Iterative(comptime T: type) type {
+    return struct {
         pub fn sumOfProducts(items: []const T, r: usize) T {
             var s: T = 0;
             const n: usize = items.len;
