@@ -3,6 +3,112 @@ const std = @import("std");
 const max_len = 20;
 const test_data = @import("combinations_test_data.zig").data;
 
+pub fn main_vector() !void {
+    var runs: usize = 100;
+    while (runs > 0) : (runs -= 1) {
+        for (test_data) |d| {
+            const n: u8 = @intCast(u8, d.prices.len);
+            const r: u8 = d.r;
+            const ixs = indexes(r, n);
+
+            var s: f64 = 0;
+            var c: f64 = 0;
+
+            var j: u20 = 0;
+            while (j < ixs.len) : (j += 1) {
+                const ix = ixs[j];
+                var a = [_]f64{1} ** 20;
+                var b: u5 = 0;
+                var mr: u8 = 0;
+
+                while (b <= n) : (b += 1) {
+                    //if ((ix & (@intCast(u64, 1) << b) != 0)) { // if b bit set in ix
+                    if (ix & masks[b] != 0) { // if b bit set in ix
+                        a[mr] = d.prices[b];
+                        mr += 1;
+                        if (mr == r) {
+                            break;
+                        }
+                    }
+                }
+                var v: @Vector(20, f64) = a;
+                s += @reduce(.Mul, v);
+                c += 1;
+            }
+
+            const w = s * d.stake / c;
+            try std.testing.expect(@fabs(w - d.winning) < 0.1);
+        }
+    }
+}
+
+pub fn main() !void {
+    const start = std.time.nanoTimestamp();
+    const runs: usize = 562;
+    var rns = runs;
+    var sum: f64 = 0;
+    while (rns > 0) : (rns -= 1) {
+        for (test_data) |d| {
+            const n: u5 = @intCast(u5, d.prices.len);
+            const r: u5 = d.r;
+
+            var s: f64 = 0;
+            for (indexes(r, n)) |ix| {
+                var m: f64 = 1;
+                var b: u5 = 0;
+
+                while (b <= n) : (b += 1) {
+                    if ((ix & (one << b) != 0)) { // if b bit set in ix
+                        m *= d.prices[b];
+                    }
+                }
+                s += m;
+            }
+
+            //const s = slipPrice(d.prices, r);
+            const w = s * d.stake / @intToFloat(f64, count(r, n));
+            //try std.testing.expect(@fabs(w - d.winning) < 0.1);
+            sum += w;
+        }
+    }
+    const duration = std.time.nanoTimestamp() - start;
+    const nsop = @intCast(u64, duration) / @intCast(u64, runs);
+    std.debug.print("duration: {d} {d} ns/op\n", .{ duration, nsop });
+    std.debug.print("sum: {d}\n", .{sum});
+}
+
+const one = @intCast(u32, 1);
+
+fn slipPrice(prices: []const f64, r: u5) f64 {
+    const n: u5 = @intCast(u5, prices.len);
+
+    var s: f64 = 0;
+    for (indexes(r, n)) |ix| {
+        var m: f64 = 1;
+        var b: u5 = 0;
+
+        while (b <= n) : (b += 1) {
+            if ((ix & (one << b) != 0)) { // if b bit set in ix
+                m *= prices[b];
+            }
+        }
+        s += m;
+    }
+
+    return s;
+}
+
+const masks = calcMasks();
+
+fn calcMasks() [20]u20 {
+    var m = [_]u20{0} ** 20;
+    var i: u5 = 0;
+    while (i < 20) : (i += 1) {
+        m[i] = @intCast(u20, 1) << i;
+    }
+    return m;
+}
+
 test "test slips" {
     if (true) return error.SkipZigTest;
 
@@ -40,7 +146,42 @@ test "test slips" {
     }
 }
 
+test "test slips 22" {
+    var runs: usize = 1000;
+    while (runs > 0) : (runs -= 1) {
+        for (test_data) |d| {
+            const n: u8 = @intCast(u8, d.prices.len);
+            const r: u8 = d.r;
+            const ixs = indexes(r, n);
+
+            var s: f64 = 0;
+            var c: f64 = 0;
+            //std.debug.print("ixs: {b} r: {d} n: {d}\n", .{ ixs, r, n });
+            var j: u20 = 0;
+            while (j < ixs.len) : (j += 1) {
+                var m: f64 = 1;
+                var b: u6 = 0;
+                const ix = ixs[j];
+
+                while (b <= n) : (b += 1) {
+                    if ((ix & (@intCast(u64, 1) << b) != 0)) { // if b bit set in ix
+                        m *= d.prices[b];
+                    }
+                }
+                s += m;
+                c += 1;
+            }
+
+            const w = s * d.stake / c;
+            //std.debug.print("w = {d}, d.winning = {d}\n", .{ w, d.winning });
+            try std.testing.expect(@fabs(w - d.winning) < 0.1);
+        }
+    }
+}
+
 test {
+    if (true) return error.SkipZigTest;
+
     var s: u32 = 0;
 
     std.debug.print("\n", .{});
@@ -242,7 +383,7 @@ fn position(r: u8, n: u8) u8 {
     }
 }
 
-fn indexes(r: u8, n: u8) []const u21 {
+fn indexes(r: u5, n: u5) []const u21 {
     const pos = a_indexes_positions[r - 1];
     const no = count(r, n);
     return a_indexes[pos .. pos + no];

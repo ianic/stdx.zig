@@ -25,16 +25,17 @@ pub fn main() !void {
 // Sum of products of all combinations.
 // Combinations of n items taken r at the time.
 pub fn sumOfProducts(items: []const f64, r: usize) f64 {
-    const n = items.len;
-    // handle simple r==1 and r==n cases
-    // not necessary tiny optimization
-    if (r == 1) {
-        return sumAll(items);
-    } else if (r == n) {
-        return mulAll(items);
-    }
-    // all other cases
-    return sumOfProductsRec(items, r - 1, n, 1);
+    //const n = items.len;
+    //handle simple r==1 and r==n cases
+    //not necessary tiny optimization
+    // if (r == 1) {
+    //     return sumAll(items);
+    // } else if (r == n) {
+    //     return mulAll(items);
+    // }
+    //all other cases
+    //return sumOfProductsRec(items, r - 1, n, 1);
+    return SOP(items, r);
 }
 
 fn sumAll(items: []const f64) f64 {
@@ -69,12 +70,65 @@ test "2/4" {
     const items = [_]f64{ 1, 2, 3, 4 };
     const sp = sumOfProducts(&items, 2);
     try std.testing.expectEqual(sp, 35);
+
+    try std.testing.expectEqual(sumOfProd(&items, 2), 35);
 }
 
 test "3/5" {
     const items = [_]f64{ 1, 2, 3, 4, 5 };
     const sp = sumOfProducts(&items, 3);
     try std.testing.expectEqual(sp, 225);
+
+    try std.testing.expectEqual(sumOfProd(&items, 3), 225);
+}
+const SOP = @import("sum_of_products.zig").SumOfProductsGen(f64).sum;
+
+fn sumOfProd(items: []const f64, r: usize) f64 {
+    //return SumOfProductsGen(f64).sum(items, r);
+    return SOP(items, r);
+}
+fn SumOfProductsGen(comptime T: type) type {
+    return struct {
+        pub fn sum(items: []const T, r: usize) T {
+            const n: usize = items.len;
+            var s: T = 0;
+
+            switch (r) {
+                2 => {
+                    var l1: usize = r - 1;
+                    while (l1 < n) : (l1 += 1) {
+                        var p1: T = items[l1];
+
+                        var l2: usize = r - 2;
+                        while (l2 < l1) : (l2 += 1) {
+                            var p2 = p1 * items[l2];
+                            s += p2;
+                        }
+                    }
+                },
+                3 => {
+                    var l1: usize = r - 1;
+                    while (l1 < n) : (l1 += 1) {
+                        var p1: T = items[l1];
+
+                        var l2: usize = r - 2;
+                        while (l2 < l1) : (l2 += 1) {
+                            var p2 = p1 * items[l2];
+
+                            var l3: usize = r - 3;
+                            while (l3 < l2) : (l3 += 1) {
+                                var p3 = p2 * items[l3];
+                                s += p3;
+                            }
+                        }
+                    }
+                },
+                else => unreachable,
+            }
+
+            return s;
+        }
+    };
 }
 
 test "first data row" {
