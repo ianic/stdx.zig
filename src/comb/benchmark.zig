@@ -7,6 +7,7 @@ const recursive = @import("sum_of_products.zig").Recursive(f64).sumOfProducts;
 
 // zig run -OReleaseFast bencmark.zig
 pub fn main() !void {
+    try bench("Lex", 1, lex);
     try bench("CoolLex", 1, coolLex);
     try bench("CoolLexSlice", 1, coolLexSlice);
 
@@ -33,6 +34,17 @@ pub fn sumOfProductsRecursive() !void {
 
 const CoolLex = @import("cool_lex.zig").CoolLex;
 const CoolLexSlice = @import("cool_lex.zig").CoolLexSlice;
+const Lex = @import("lex.zig").Lex;
+
+pub fn lex() !void {
+    var cnt: usize = 0;
+    var buf = [_]usize{0} ** 20;
+    var l = Lex.init(&buf, 32);
+    while (l.next()) |_| {
+        cnt += 1;
+    }
+    try std.testing.expectEqual(binomial(32, 20), cnt);
+}
 
 pub fn coolLex() !void {
     var cnt: usize = 0;
@@ -66,7 +78,7 @@ pub fn bench(name: []const u8, runs: usize, comptime handler: fn () anyerror!voi
 
     const duration = std.time.nanoTimestamp() - start;
     const nsop = @intCast(u64, duration) / @intCast(u64, runs);
-    std.debug.print("{s} duration: {d}ns {d}s {d} ns/op\n", .{
+    std.debug.print("{s:<25} duration: {d}ns {d}s {d} ns/op\n", .{
         name,
         duration,
         @intToFloat(f64, duration) / @intToFloat(f64, std.time.ns_per_s),
