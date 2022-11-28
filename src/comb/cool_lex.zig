@@ -17,11 +17,11 @@ pub const CoolLex = struct {
 
     // Init for r of n combinations;
     // r items from the set of size n
-    pub fn init(r: u6, n: u6) Self {
-        assert(n > 0 and r > 0 and n >= r);
+    pub fn init(n: u6, k: u6) Self {
+        assert(n > 0 and k > 0 and n >= k);
         return .{
             .limit_mask = one << n,
-            .current = (one << r) - 1,
+            .current = (one << k) - 1,
         };
     }
 
@@ -48,7 +48,7 @@ pub const CoolLex = struct {
 const expectEqual = std.testing.expectEqual;
 
 test "CoolLex" {
-    var cl = CoolLex.init(3, 5);
+    var cl = CoolLex.init(5, 3);
     try expectEqual(cl.next(), 0b00111);
     try expectEqual(cl.next(), 0b01110);
     try expectEqual(cl.next(), 0b01101);
@@ -67,7 +67,7 @@ test "CoolLex show" {
     if (SKIP_SHOW_TESTS) return error.SkipZigTest;
 
     std.debug.print("\n", .{});
-    var cl = CoolLex.init(3, 5);
+    var cl = CoolLex.init(5, 3);
     while (cl.next()) |c| {
         std.debug.print("{b:0>5}\n", .{c});
     }
@@ -83,12 +83,12 @@ pub const CoolLexSlice = struct {
 
     // Provide slice of n elements.
     // To get all combinations r of n elements.
-    pub fn init(r: u6, b: []usize) Self {
+    pub fn init(b: []usize, k: usize) Self {
         const n = b.len;
-        assert(n > 0 and r > 0 and n >= r);
+        assert(n > 0 and k > 0 and n >= k);
 
         var i: usize = 0;
-        while (i < r) : (i += 1) {
+        while (i < k) : (i += 1) {
             b[i] = 1;
         }
         while (i < n) : (i += 1) {
@@ -98,7 +98,7 @@ pub const CoolLexSlice = struct {
         return .{
             .b = b,
             .x = 0, // using 0 to signal first iterations, should be init to r-1 after first visit, it is never zero again
-            .y = r - 1,
+            .y = k - 1,
             .n = n,
         };
     }
@@ -134,7 +134,7 @@ test "CoolLexSlice show" {
 
     std.debug.print("\n", .{});
     var b = [_]usize{0} ** 5;
-    var cl = CoolLexSlice.init(3, &b);
+    var cl = CoolLexSlice.init(&b, 3);
     while (cl.next()) |c| {
         std.debug.print("{d}\n", .{c});
     }
@@ -142,7 +142,7 @@ test "CoolLexSlice show" {
 
 test "CoolLexSlice" {
     var b = [_]usize{0} ** 5;
-    var cl = CoolLexSlice.init(3, &b);
+    var cl = CoolLexSlice.init(&b, 3);
     try std.testing.expectEqualSlices(usize, &[_]usize{ 1, 1, 1, 0, 0 }, cl.next().?);
     try std.testing.expectEqualSlices(usize, &[_]usize{ 0, 1, 1, 1, 0 }, cl.next().?);
     try std.testing.expectEqualSlices(usize, &[_]usize{ 1, 0, 1, 1, 0 }, cl.next().?);
