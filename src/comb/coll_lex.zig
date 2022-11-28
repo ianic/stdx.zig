@@ -8,7 +8,7 @@ const assert = std.debug.assert;
 //   https://www.sciencedirect.com/science/article/pii/S0012365X07009570#aep-figure-id48
 //   https://news.ycombinator.com/item?id=33716358
 //   https://gist.github.com/m1el/6016b53ff20ae08712436a4b073820f2#file-bit_permutations-rs-L13
-const CoolLex = struct {
+pub const CoolLex = struct {
     limit_mask: usize,
     current: usize,
 
@@ -27,21 +27,21 @@ const CoolLex = struct {
 
     // Returns combination as binary string.
     // Null when there is no more combinations.
-    pub fn next(self: *Self) ?usize {
-        if (self.current & self.limit_mask == 0) {
-            defer self.findNext();
-            return self.current;
+    pub fn next(c: *Self) ?usize {
+        if (c.current & c.limit_mask == 0) {
+            defer c.findNext();
+            return c.current;
         }
         return null;
     }
 
-    fn findNext(self: *Self) void {
-        const lowest_zero = self.current & (self.current + 1);
+    fn findNext(c: *Self) void {
+        const lowest_zero = c.current & (c.current + 1);
         const suffix_mask = lowest_zero ^ (lowest_zero -% 1);
-        const suffix = suffix_mask & self.current;
+        const suffix = suffix_mask & c.current;
         const next_bit_mask = suffix_mask +% 1;
-        const next_bit_m1 = (next_bit_mask & self.current) -| 1;
-        self.current = self.current + suffix - next_bit_m1;
+        const next_bit_m1 = (next_bit_mask & c.current) -| 1;
+        c.current = c.current + suffix - next_bit_m1;
     }
 };
 
@@ -73,7 +73,7 @@ test "CoolLex show" {
     }
 }
 
-const CoolLexSlice = struct {
+pub const CoolLexSlice = struct {
     b: []usize,
     x: usize,
     y: usize,
@@ -97,7 +97,7 @@ const CoolLexSlice = struct {
 
         return .{
             .b = b,
-            .x = 0,
+            .x = 0, // using 0 to signal first iterations, should be init to r-1 after first visit, it is never zero again
             .y = r - 1,
             .n = n,
         };
