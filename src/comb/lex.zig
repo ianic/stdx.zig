@@ -2,18 +2,19 @@ const std = @import("std");
 
 // fxtbook chapter 6.2.1
 // Returns set: list of elements indexes.
+// The sequence is such that the sets are ordered lexicographically
 pub const Lex = struct {
-    current: []usize,
     n: usize,
     k: usize,
+    current: []usize,
     no: usize,
 
     const Self = @This();
     pub fn init(buf: []usize, n: u6) Self {
         var c = Self{
-            .current = buf,
             .n = n,
             .k = buf.len,
+            .current = buf,
             .no = 0,
         };
         c.first();
@@ -28,20 +29,22 @@ pub const Lex = struct {
     }
 
     pub fn next(c: *Self) ?[]usize {
-        if (c.current[0] == c.n - c.k) { // current combination is the last
-            return null;
-        }
-
-        defer c.no += 1;
-        if (c.no == 0) { // current combination is the first
+        if (c.no == 0 or c.hasNext()) { // current combination is the first
+            c.no += 1;
             return c.current;
         }
+        return null;
+    }
 
+    pub fn hasNext(c: *Self) bool {
+        if (c.current[0] == c.n - c.k) { // current combination is the last
+            return false;
+        }
         var j = c.k - 1;
         // easy case:  highest element != highest possible value:
         if (c.current[j] < (c.n - 1)) {
             c.current[j] += 1;
-            return c.current;
+            return true;
         }
 
         // find highest falling edge:
@@ -59,7 +62,7 @@ pub const Lex = struct {
             c.current[j] = z;
         }
 
-        return c.current;
+        return true;
     }
 };
 

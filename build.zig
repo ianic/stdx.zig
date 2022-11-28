@@ -35,4 +35,11 @@ pub fn build(b: *std.build.Builder) void {
         example.install();
         example_step.dependOn(&example.step);
     }
+
+    const bench = b.addExecutable("benchmark", "src/comb/benchmark.zig");
+    bench.addPackage(pkgs.stdx);
+    bench.setBuildMode(mode);
+    bench.setTarget(target);
+    bench.install();
+    example_step.dependOn(&bench.step);
 }
