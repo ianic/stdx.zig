@@ -7,14 +7,10 @@ const recursive = @import("sum_of_products.zig").Recursive(f64).sumOfProducts;
 
 // zig run -OReleaseFast bencmark.zig
 pub fn main() !void {
-    // try bench("Lex", 1, lex);
-    // try bench("Lex hasNext api", 1, lexHasNext);
-
     var i: usize = 0;
     while (i < 10) : (i += 1) {
-        try bench("CoLex hasNext api", 1, colexHasNext);
-        try bench("CoLex get/find api", 1, colexGetFind);
-        try bench("CoLex iterator api", 1, colexIter);
+        try bench("Lex", 1, lex);
+        try bench("CoLex", 1, colex);
     }
 
     // try bench("CoolLex", 1, coolLex);
@@ -51,56 +47,23 @@ const Lex = @import("lex.zig").Lex;
 const CoLex = @import("colex.zig").CoLex;
 
 pub fn lex() !void {
-    var cnt: usize = 0;
-    var a = [_]usize{0} ** K;
-    var l = Lex.init(&a, N);
-    while (l.next()) |_| {
-        cnt += 1;
-    }
-    try std.testing.expectEqual(expectedCnt, cnt);
-}
-
-pub fn lexHasNext() !void {
-    var a: [K]usize = undefined;
+    var a: [K]u8 = undefined;
     var l = Lex.init(&a, N);
     // visit a
     var cnt: usize = 1;
-    while (l.hasNext()) {
+    while (l.next()) {
         // visit a
         cnt += 1;
     }
     try std.testing.expectEqual(expectedCnt, cnt);
 }
 
-pub fn colexGetFind() !void {
-    var a: [K]usize = undefined;
+pub fn colex() !void {
+    var a: [K]u8 = undefined;
     var l = CoLex.init(&a, N);
-    var cnt: usize = 0;
-    while (l.get()) |c| : (l.findNext()) {
-        _ = c;
-        cnt += 1;
-    }
-    try std.testing.expectEqual(expectedCnt, cnt);
-}
-
-pub fn colexIter() !void {
-    var cnt: usize = 0;
-    var a: [K]usize = undefined;
-    var l = CoLex.init(&a, N);
-    while (l.next()) |c| {
-        _ = c;
-        cnt += 1;
-    }
-    try std.testing.expectEqual(expectedCnt, cnt);
-}
-
-pub fn colexHasNext() !void {
-    var a: [K]usize = undefined;
-    var l = CoLex.init(&a, N);
-
     // visit a
     var cnt: usize = 1;
-    while (l.hasNext()) {
+    while (l.next()) {
         // visit a
         cnt += 1;
     }
