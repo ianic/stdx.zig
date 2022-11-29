@@ -10,10 +10,12 @@ pub fn main() !void {
     // try bench("Lex", 1, lex);
     // try bench("Lex hasNext api", 1, lexHasNext);
 
-    try bench("CoLex next", 1, colex);
-    try bench("CoLex iter", 1, colexIter);
-    try bench("CoLex hasNext api", 1, colexHasNext);
-    try bench("CoLex Next2 api", 1, colexNext);
+    var i: usize = 0;
+    while (i < 10) : (i += 1) {
+        try bench("CoLex hasNext api", 1, colexHasNext);
+        try bench("CoLex get/find api", 1, colexGetFind);
+        try bench("CoLex iterator api", 1, colexIter);
+    }
 
     // try bench("CoolLex", 1, coolLex);
     // try bench("CoolLexSlice", 1, coolLexSlice);
@@ -70,23 +72,12 @@ pub fn lexHasNext() !void {
     try std.testing.expectEqual(expectedCnt, cnt);
 }
 
-pub fn colexNext() !void {
+pub fn colexGetFind() !void {
     var a: [K]usize = undefined;
     var l = CoLex.init(&a, N);
     var cnt: usize = 0;
-    while (l.comb2()) |c| : (l.next2()) {
+    while (l.get()) |c| : (l.findNext()) {
         _ = c;
-        cnt += 1;
-    }
-    try std.testing.expectEqual(expectedCnt, cnt);
-}
-
-pub fn colex() !void {
-    var cnt: usize = 0;
-    var a: [K]usize = undefined;
-
-    var l = CoLex.init(&a, N);
-    while (l.next()) |_| {
         cnt += 1;
     }
     try std.testing.expectEqual(expectedCnt, cnt);
@@ -96,16 +87,17 @@ pub fn colexIter() !void {
     var cnt: usize = 0;
     var a: [K]usize = undefined;
     var l = CoLex.init(&a, N);
-    var i = l.iter();
-    while (i.next()) |_| {
+    while (l.next()) |c| {
+        _ = c;
         cnt += 1;
     }
     try std.testing.expectEqual(expectedCnt, cnt);
 }
 
 pub fn colexHasNext() !void {
-    var a = [_]usize{0} ** K;
+    var a: [K]usize = undefined;
     var l = CoLex.init(&a, N);
+
     // visit a
     var cnt: usize = 1;
     while (l.hasNext()) {
@@ -146,7 +138,7 @@ pub fn bench(name: []const u8, runs: usize, comptime handler: fn () anyerror!voi
 
     const duration = std.time.nanoTimestamp() - start;
     const nsop = @intCast(u64, duration) / @intCast(u64, runs);
-    std.debug.print("{s:<25} duration: {d}ns {d}s {d} ns/op\n", .{
+    std.debug.print("{s:<25} duration: {d}ns {d:.4}s {d} ns/op\n", .{
         name,
         duration,
         @intToFloat(f64, duration) / @intToFloat(f64, std.time.ns_per_s),
