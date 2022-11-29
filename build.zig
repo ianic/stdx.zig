@@ -27,6 +27,7 @@ pub fn build(b: *std.build.Builder) void {
     const example_step = b.step("examples", "Build examples");
     inline for (.{
         "thread_mpsc",
+        "comb_bench",
     }) |example_name| {
         const example = b.addExecutable(example_name, "examples/" ++ example_name ++ ".zig");
         example.addPackage(pkgs.stdx);
@@ -36,10 +37,10 @@ pub fn build(b: *std.build.Builder) void {
         example_step.dependOn(&example.step);
     }
 
-    const bench = b.addExecutable("benchmark", "src/comb/benchmark.zig");
-    bench.addPackage(pkgs.stdx);
-    bench.setBuildMode(mode);
-    bench.setTarget(target);
-    bench.install();
-    example_step.dependOn(&bench.step);
+    // const bench = b.addExecutable("benchmark", "src/comb/benchmark.zig");
+    // bench.addPackage(pkgs.stdx);
+    // bench.setBuildMode(mode);
+    // bench.setTarget(target);
+    // bench.install();
+    // example_step.dependOn(&bench.step);
 }

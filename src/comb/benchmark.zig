@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const comb = @import("../comb.zig");
+
 const test_data = @import("test_data.zig").data;
 const binomial = @import("binomial.zig").binomial;
 const iterative = @import("sum_of_products.zig").Iterative(f64).sumOfProducts;
