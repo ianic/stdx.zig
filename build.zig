@@ -28,6 +28,7 @@ pub fn build(b: *std.build.Builder) void {
     inline for (.{
         "thread_mpsc",
         "comb_bench",
+        "comb_sop_bench",
     }) |example_name| {
         const example = b.addExecutable(example_name, "examples/" ++ example_name ++ ".zig");
         example.addPackage(pkgs.stdx);

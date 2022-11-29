@@ -1,34 +1,17 @@
 const std = @import("std");
 
-pub fn Recursive(comptime T: type) type {
-    return struct {
-        pub fn sumOfProducts(items: []const T, k: usize) T {
-            return rec(items, k - 1, items.len, 1);
-        }
-
-        fn rec(items: []const T, start_pos: usize, end_pos: usize, prod: T) T {
-            var sum: T = 0;
-            var i = start_pos;
-            while (i < end_pos) : (i += 1) {
-                sum += if (start_pos == 0) prod * items[i] else rec(items, start_pos - 1, i, prod * items[i]);
-            }
-            return sum;
-        }
-    };
-}
-
 const expectEqual = std.testing.expectEqual;
 
 test "2/4" {
     const items = [_]usize{ 1, 2, 3, 4 };
-    try expectEqual(Recursive(usize).sumOfProducts(&items, 2), 35);
-    try expectEqual(Iterative(usize).sumOfProducts(&items, 2), 35);
+    try expectEqual(SumOfProducts(usize).recursive(&items, 2), 35);
+    try expectEqual(SumOfProducts(usize).iterative(&items, 2), 35);
 }
 
 test "3/5" {
     const items = [_]usize{ 1, 2, 3, 4, 5 };
-    try expectEqual(Recursive(usize).sumOfProducts(&items, 3), 225);
-    try expectEqual(Iterative(usize).sumOfProducts(&items, 3), 225);
+    try expectEqual(SumOfProducts(usize).recursive(&items, 3), 225);
+    try expectEqual(SumOfProducts(usize).iterative(&items, 3), 225);
 }
 
 test "all data rows" {
@@ -36,11 +19,11 @@ test "all data rows" {
     const binomial = @import("binomial.zig").binomial;
 
     for (test_data) |d| {
-        const p = Iterative(f64).sumOfProducts(d.prices, d.k);
+        const p = SumOfProducts(f64).iterative(d.prices, d.k);
         const w = p * d.stake / @intToFloat(f64, binomial(d.prices.len, d.k));
         try std.testing.expect(@fabs(w - d.winning) < 0.1);
 
-        const pr = Recursive(f64).sumOfProducts(d.prices, d.k);
+        const pr = SumOfProducts(f64).recursive(d.prices, d.k);
         const wr = pr * d.stake / @intToFloat(f64, binomial(d.prices.len, d.k));
         try std.testing.expect(@fabs(wr - d.winning) < 0.1);
     }
@@ -90,9 +73,22 @@ test "number of multiplications" {
     }
 }
 
-pub fn Iterative(comptime T: type) type {
+pub fn SumOfProducts(comptime T: type) type {
     return struct {
-        pub fn sumOfProducts(items: []const T, k: usize) T {
+        pub fn recursive(items: []const T, k: usize) T {
+            return rec(items, k - 1, items.len, 1);
+        }
+
+        fn rec(items: []const T, start_pos: usize, end_pos: usize, prod: T) T {
+            var sum: T = 0;
+            var i = start_pos;
+            while (i < end_pos) : (i += 1) {
+                sum += if (start_pos == 0) prod * items[i] else rec(items, start_pos - 1, i, prod * items[i]);
+            }
+            return sum;
+        }
+
+        pub fn iterative(items: []const T, k: usize) T {
             var s: T = 0;
             const n: usize = items.len;
 
