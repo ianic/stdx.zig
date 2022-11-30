@@ -78,12 +78,27 @@ pub const RevDoor = struct {
     }
 };
 
+const test_data_5_3 = [10][3]u8{
+    [_]u8{ 0, 1, 2 },
+    [_]u8{ 0, 2, 3 },
+    [_]u8{ 1, 2, 3 },
+    [_]u8{ 0, 1, 3 },
+    [_]u8{ 0, 3, 4 },
+    [_]u8{ 1, 3, 4 },
+    [_]u8{ 2, 3, 4 },
+    [_]u8{ 0, 2, 4 },
+    [_]u8{ 1, 2, 4 },
+    [_]u8{ 0, 1, 4 },
+};
+
 test "3/5" {
     var a: [3]u8 = undefined;
     var l = RevDoor.init(&a, 5);
 
-    std.debug.print("\n{d}\n", .{a});
-    while (l.next()) {
-        std.debug.print("{d}\n", .{a});
+    try std.testing.expectEqualSlices(u8, &test_data_5_3[0], &a); // visit first combination
+    var j: u8 = 1;
+    while (l.next()) : (j += 1) {
+        try std.testing.expectEqualSlices(u8, &test_data_5_3[j], &a); // all other
     }
+    try std.testing.expectEqual(l.next(), false);
 }

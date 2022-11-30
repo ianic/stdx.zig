@@ -16,4 +16,5 @@ test {
     _ = @import("comb/binomial.zig");
     _ = @import("comb/cool_lex.zig");
     _ = @import("comb/sum_of_products.zig");
+    _ = @import("comb/revdoor.zig");
 }
