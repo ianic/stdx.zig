@@ -8,6 +8,14 @@ const assert = std.debug.assert;
 //   https://www.sciencedirect.com/science/article/pii/S0012365X07009570#aep-figure-id48
 //   https://news.ycombinator.com/item?id=33716358
 //   https://gist.github.com/m1el/6016b53ff20ae08712436a4b073820f2#file-bit_permutations-rs-L13
+//
+// Different representations used here:
+//   bit string  0b00111                    - number of n bits uN
+//   bit array   [5]u1{ 1, 1, 1, 0, 0 },    - array of n u1 elements
+//   indices     [3]{0, 1, 2}               - array of k elements
+// Bit string is binary number where 1 at some position means that element at that position is selected.
+// Bit array is bit string represented as array
+// Indices holds indexes of the selected elements.
 pub const CoolLex = struct {
     a: []u1, // working array
     x: usize,
@@ -110,7 +118,7 @@ test "CoolLex" {
 
 const SKIP_SHOW_TESTS = true;
 
-pub const CoolLexBinaryString = struct {
+pub const CoolLexBitStr = struct {
     limit_mask: usize,
     current: usize,
 
@@ -149,8 +157,8 @@ pub const CoolLexBinaryString = struct {
 
 const expectEqual = std.testing.expectEqual;
 
-test "CoolLexBinaryString" {
-    var cl = CoolLexBinaryString.init(5, 3);
+test "CoolLexBitStr" {
+    var cl = CoolLexBitStr.init(5, 3);
     try expectEqual(cl.next(), 0b00111);
     try expectEqual(cl.next(), 0b01110);
     try expectEqual(cl.next(), 0b01101);
@@ -165,12 +173,49 @@ test "CoolLexBinaryString" {
     try expectEqual(cl.next(), null);
 }
 
-test "CoolLexBinaryString show" {
+test "CoolLexBitStr show" {
     if (SKIP_SHOW_TESTS) return error.SkipZigTest;
 
     std.debug.print("\n", .{});
-    var cl = CoolLexBinaryString.init(5, 3);
+    var cl = CoolLexBitStr.init(5, 3);
     while (cl.next()) |c| {
         std.debug.print("{b:0>5}\n", .{c});
+    }
+}
+
+pub fn bitArrayToIndices(bs: []const u1, ix: []u8) void {
+    var j: usize = 0;
+    var i: u8 = 0;
+    while (i < bs.len) : (i += 1) {
+        if (bs[i] == 1) {
+            ix[j] = i;
+            j += 1;
+            if (j == ix.len) {
+                return;
+            }
+        }
+    }
+}
+
+test "bitArrayToIndices" {
+    const indices = [10][3]u8{
+        [_]u8{ 0, 1, 2 },
+        [_]u8{ 1, 2, 3 },
+        [_]u8{ 0, 2, 3 },
+        [_]u8{ 0, 1, 3 },
+        [_]u8{ 1, 2, 4 },
+        [_]u8{ 0, 2, 4 },
+        [_]u8{ 1, 3, 4 },
+        [_]u8{ 2, 3, 4 },
+        [_]u8{ 0, 3, 4 },
+        [_]u8{ 0, 1, 4 },
+    };
+
+    var ix: [3]u8 = undefined;
+
+    for (test_data_5_3) |bs, i| {
+        bitArrayToIndices(&bs, &ix);
+        try std.testing.expectEqualSlices(u8, &indices[i], &ix);
+        //std.debug.print("{d}\n", .{ix});
     }
 }
