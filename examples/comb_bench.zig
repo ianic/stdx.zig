@@ -15,7 +15,6 @@ pub fn main() !void {
         //try stdx.bench("\tCoLexIndices", 1, coolLexIndices);
 
         try stdx.bench("\tLex", 1, lex);
-        //try stdx.bench("\tLex2", 1, lex2);
         try stdx.bench("\tCoLex", 1, colex);
         try stdx.bench("\tRevDoor", 1, revdoor);
         std.debug.print("\n", .{});
@@ -25,18 +24,6 @@ pub fn main() !void {
 pub fn lex() !void {
     var a: [K]u8 = undefined;
     var l = comb.Lex.init(&a, N);
-    // visit a
-    var cnt: usize = 1;
-    while (l.next()) {
-        // visit a
-        cnt += 1;
-    }
-    try std.testing.expectEqual(expectedCnt, cnt);
-}
-
-pub fn lex2() !void {
-    var a: [K]u8 = undefined;
-    var l = comb.Lex2.init(&a, N);
     // visit a
     var cnt: usize = 1;
     while (l.next()) {
