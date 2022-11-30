@@ -3,7 +3,7 @@ pub const binomial = @import("comb/binomial.zig").binomial;
 pub const Lex = @import("comb/lex.zig").Lex;
 pub const CoLex = @import("comb/colex.zig").CoLex;
 pub const CoolLex = @import("comb/cool_lex.zig").CoolLex;
-pub const CoolLexBinaryString = @import("comb/cool_lex.zig").CoolLexBinaryString;
+pub const CoolLexBitStr = @import("comb/cool_lex.zig").CoolLexBitStr;
 
 pub const SumOfProducts = @import("comb/sum_of_products.zig").SumOfProducts;
 
