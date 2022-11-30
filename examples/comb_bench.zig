@@ -12,10 +12,12 @@ pub fn main() !void {
     while (i < 5) : (i += 1) {
         try stdx.bench("\tCoolLexBitStr", 1, coolLexBitStr);
         try stdx.bench("\tCoolLex", 1, coolLex);
-        try stdx.bench("\tCoLexIndices", 1, coolLexIndices);
+        //try stdx.bench("\tCoLexIndices", 1, coolLexIndices);
 
         try stdx.bench("\tLex", 1, lex);
+        //try stdx.bench("\tLex2", 1, lex2);
         try stdx.bench("\tCoLex", 1, colex);
+        try stdx.bench("\tRevDoor", 1, revdoor);
         std.debug.print("\n", .{});
     }
 }
@@ -23,6 +25,18 @@ pub fn main() !void {
 pub fn lex() !void {
     var a: [K]u8 = undefined;
     var l = comb.Lex.init(&a, N);
+    // visit a
+    var cnt: usize = 1;
+    while (l.next()) {
+        // visit a
+        cnt += 1;
+    }
+    try std.testing.expectEqual(expectedCnt, cnt);
+}
+
+pub fn lex2() !void {
+    var a: [K]u8 = undefined;
+    var l = comb.Lex2.init(&a, N);
     // visit a
     var cnt: usize = 1;
     while (l.next()) {
@@ -83,4 +97,17 @@ pub fn coolLexIndices() !void {
     }
     try std.testing.expectEqual(expectedCnt, cnt);
     try std.testing.expectEqual(ix[0], 0); // use ix to prevent optimize out
+}
+
+
+pub fn revdoor() !void {
+    var a: [K]u8 = undefined;
+    var l = comb.RevDoor.init(&a, N);
+    // visit a
+    var cnt: usize = 1;
+    while (l.next()) {
+        // visit a
+        cnt += 1;
+    }
+    try std.testing.expectEqual(expectedCnt, cnt);
 }
