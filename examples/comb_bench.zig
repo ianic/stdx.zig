@@ -2,7 +2,7 @@ const std = @import("std");
 const stdx = @import("stdx");
 const comb = stdx.comb;
 
-const K = 20;
+const K = 12;
 const N = 32;
 const expectedCnt = comb.binomial(N, K);
 
@@ -17,8 +17,35 @@ pub fn main() !void {
         try stdx.bench("\tLex", 1, lex);
         try stdx.bench("\tCoLex", 1, colex);
         try stdx.bench("\tRevDoor", 1, revdoor);
+        //try stdx.bench("\tLam", 1, lam);
+        try stdx.bench("\tLam callback", 1, lamCallback);
         std.debug.print("\n", .{});
     }
+}
+
+pub fn lam() !void {
+    var a: [K + 1]u8 = undefined;
+    var t: [K + 1]u8 = undefined;
+
+    var l = comb.Lam.init(&a, &t, N, K);
+    l.run();
+    try std.testing.expectEqual(expectedCnt, l.cnt);
+}
+
+fn lamCallback() !void {
+    const CallbackWrapper = struct {
+        cnt: usize = 0,
+        const Self = @This();
+        pub fn callback(self: *Self, a: []u8) !void {
+            _ = a;
+            //std.debug.print("{d}\n", .{a});
+            self.cnt += 1;
+        }
+    };
+
+    var wrapper: CallbackWrapper = .{};
+    try comb.lamStatic(N, K, CallbackWrapper.callback, &wrapper);
+    try std.testing.expectEqual(expectedCnt, wrapper.cnt);
 }
 
 pub fn lex() !void {
@@ -85,7 +112,6 @@ pub fn coolLexIndices() !void {
     try std.testing.expectEqual(expectedCnt, cnt);
     try std.testing.expectEqual(ix[0], 0); // use ix to prevent optimize out
 }
-
 
 pub fn revdoor() !void {
     var a: [K]u8 = undefined;
