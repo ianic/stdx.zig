@@ -48,10 +48,10 @@ pub const RevDoor = struct {
         }
 
         while (true) {
+            if (c.j == c.k) return false;
             if (c.decrease()) |r| return r;
             if (c.j == c.k) return false;
             if (c.increase()) |r| return r;
-            if (c.j == c.k) return false;
         }
     }
 
@@ -99,6 +99,31 @@ test "3/5" {
     var j: u8 = 1;
     while (l.next()) : (j += 1) {
         try std.testing.expectEqualSlices(u8, &test_data_5_3[j], &a); // all other
+    }
+    try std.testing.expectEqual(l.next(), false);
+}
+
+const test_data_5_2 = [10][2]u8{
+    [_]u8{ 0, 1 },
+    [_]u8{ 1, 2 },
+    [_]u8{ 0, 2 },
+    [_]u8{ 2, 3 },
+    [_]u8{ 1, 3 },
+    [_]u8{ 0, 3 },
+    [_]u8{ 3, 4 },
+    [_]u8{ 2, 4 },
+    [_]u8{ 1, 4 },
+    [_]u8{ 0, 4 },
+};
+
+test "2/5" {
+    var a: [2]u8 = undefined;
+    var l = RevDoor.init(&a, 5);
+
+    try std.testing.expectEqualSlices(u8, &test_data_5_2[0], &a); // visit first combination
+    var j: u8 = 1;
+    while (l.next()) : (j += 1) {
+        try std.testing.expectEqualSlices(u8, &test_data_5_2[j], &a); // all other
     }
     try std.testing.expectEqual(l.next(), false);
 }
