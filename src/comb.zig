@@ -7,10 +7,8 @@ pub const CoolLexBitStr = @import("comb/cool_lex.zig").CoolLexBitStr;
 pub const RevDoor = @import("comb/revdoor.zig").RevDoor;
 pub const SumOfProducts = @import("comb/sum_of_products.zig").SumOfProducts;
 
-pub const Lam = @import("comb/lam.zig").Lam;
-pub const lam = @import("comb/lam.zig").lam;
-pub const lam2 = @import("comb/lam.zig").lam2;
-pub const lamStatic = @import("comb/lam.zig").lamStatic;
+pub const lam = @import("comb/lam.zig").lamStatic;
+pub const lamProvided = @import("comb/lam.zig").lamProvided;
 
 test {
     _ = @import("comb/binomial.zig");
