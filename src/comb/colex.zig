@@ -1,81 +1,81 @@
 const std = @import("std");
+
 const assert = std.debug.assert;
+const expectEqualSlices = std.testing.expectEqualSlices;
+const expectEqual = std.testing.expectEqual;
 
 // fxtbook chapter 6.2.1
 // Returns set: list of elements indexes.
 // in co-lexicographic order
-pub const CoLex = struct {
-    m: u8, // max index in a = n - k
-    a: []u8, // working array
+pub fn CoLex(comptime max_k: u8) type {
+    return struct {
+        n: u8,
+        k: u8,
+        x: [max_k + 2]u8 = undefined, // internal buffer
+        done: bool = false,
 
-    const Self = @This();
-    pub fn init(a: []u8, n: u8) Self {
-        const k: u8 = @intCast(u8, a.len);
-        assert(n >= k);
+        const Self = @This();
 
-        var c = Self{
-            .m = n - k,
-            .a = a,
-        };
-        c.first();
-        return c;
-    }
+        pub fn init(n: u8, k: u8) Self {
+            assert(n >= k and k <= max_k);
 
-    pub fn first(c: *Self) void {
-        var i: u8 = 0;
-        while (i < c.a.len) : (i += 1) {
-            c.a[i] = i;
+            var s = Self{
+                .n = n,
+                .k = k,
+            };
+            s.first();
+            return s;
         }
-    }
 
-    // find next combination
-    pub fn next(c: *Self) bool {
-        if (c.a[0] == c.m) { // current combination is the last
-            return false;
+        fn first(s: *Self) void {
+            var i: u8 = 0;
+            while (i < s.k) : (i += 1) {
+                s.x[i] = i;
+            }
+            s.x[s.k] = i; // sentinel
+            s.x[s.k + 1] = 0; // second sentinel
         }
-        var j: u8 = 0;
-        // until lowest rising edge:  attach block at low end
-        while (j + 1 < c.a.len and 1 == (c.a[j + 1] - c.a[j])) : (j += 1) {
-            c.a[j] = j;
+
+        pub fn current(s: *Self) []u8 {
+            return s.x[0..s.k];
         }
-        c.a[j] += 1; // move edge element up
-        return true;
+
+        pub fn isLast(s: *Self) bool {
+            return s.x[0] == (s.n - s.k);
+        }
+
+        // find next combination
+        fn hasNext(s: *Self) bool {
+            if (s.done) return false;
+            s.calcNext();
+            s.done = s.isLast();
+            return true;
+        }
+
+        fn calcNext(s: *Self) void {
+            var i: u8 = 0;
+            // until lowest rising edge:  attach block at low end
+            while (s.x[i] + 1 == s.x[i + 1]) : (i += 1) {
+                s.x[i] = i;
+            }
+            s.x[i] += 1; // move edge element up
+            s.x[s.k] = 0;
+        }
+
+        pub fn next(s: *Self) ?[]u8 {
+            return if (s.hasNext()) s.current() else null;
+        }
+    };
+}
+
+test "5/3 CoLex" {
+    var l = CoLex(5).init(5, 3);
+    var j: u8 = 0;
+    while (l.next()) |c| {
+        try expectEqualSlices(u8, &colex_test_data_5_3[j], c);
+        j += 1;
     }
-};
-
-const expectEqualSlices = std.testing.expectEqualSlices;
-const expectEqual = std.testing.expectEqual;
-
-const test_data_5_3 = [10][3]u8{
-    [_]u8{ 0, 1, 2 },
-    [_]u8{ 0, 1, 3 },
-    [_]u8{ 0, 2, 3 },
-    [_]u8{ 1, 2, 3 },
-    [_]u8{ 0, 1, 4 },
-    [_]u8{ 0, 2, 4 },
-    [_]u8{ 1, 2, 4 },
-    [_]u8{ 0, 3, 4 },
-    [_]u8{ 1, 3, 4 },
-    [_]u8{ 2, 3, 4 },
-};
-
-test "5/3" {
-    var buf: [3]u8 = undefined; // buf is of size k = 3
-    var l = CoLex.init(&buf, 5); // n = 5
-
-    // visit first combination
-    try expectEqualSlices(u8, &test_data_5_3[0], &buf);
-
-    var j: u8 = 1;
-    while (l.next()) : (j += 1) {
-        // call next and then visit another combination
-        try expectEqualSlices(u8, &test_data_5_3[j], &buf);
-    }
-    // next returns false
-    try expectEqual(l.next(), false);
-    // rewind to the start
-    l.first();
-    try expectEqualSlices(u8, &test_data_5_3[0], &buf);
+    try expectEqual(j, colex_test_data_5_3.len);
 }
 
 pub fn KnuthCoLex(comptime max_k: u8) type {
@@ -185,25 +185,38 @@ test "3/5 Knuth CoLex" {
     // visit all combinations
     while (l.next()) |comb| {
         //std.debug.print("{d}\n", .{comb});
-        try expectEqualSlices(u8, &test_data_5_3[j], comb);
+        try expectEqualSlices(u8, &colex_test_data_5_3[j], comb);
         j += 1;
     }
-    try expectEqual(test_data_5_3.len, j); // we visited all of them
+    try expectEqual(colex_test_data_5_3.len, j); // we visited all of them
     try expectEqual(l.next(), null); // all other calls to next returns null
 }
 
-test "3/5 Knuth CoLex ensure working k=n" {
+test "3/5  ensure working k=n" {
     if (true) return error.SkipZigTest;
 
     const n = 5;
     var k: u8 = 1;
-    const KL = KnuthCoLex(n);
+    const T = CoLex(n);
     std.debug.print("\n", .{});
     while (k <= n) : (k += 1) {
         std.debug.print("{d} / {d}\n", .{ k, n });
-        var l = KL.init(n, k);
+        var l = T.init(n, k);
         while (l.next()) |comb| {
             std.debug.print("\t{d}\n", .{comb});
         }
     }
 }
+
+const colex_test_data_5_3 = [10][3]u8{
+    [_]u8{ 0, 1, 2 },
+    [_]u8{ 0, 1, 3 },
+    [_]u8{ 0, 2, 3 },
+    [_]u8{ 1, 2, 3 },
+    [_]u8{ 0, 1, 4 },
+    [_]u8{ 0, 2, 4 },
+    [_]u8{ 1, 2, 4 },
+    [_]u8{ 0, 3, 4 },
+    [_]u8{ 1, 3, 4 },
+    [_]u8{ 2, 3, 4 },
+};

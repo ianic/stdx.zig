@@ -27,7 +27,7 @@ pub fn build(b: *std.build.Builder) void {
     const example_step = b.step("examples", "Build examples");
     inline for (.{
         "thread_mpsc",
-        "comb_bench",
+        //"comb_bench",
         "comb_sop_bench",
         "comb_hp_bench",
     }) |example_name| {
