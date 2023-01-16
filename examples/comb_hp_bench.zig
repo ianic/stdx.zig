@@ -24,9 +24,9 @@ pub fn main() !void {
     const runs = try arg2u8(5);
 
     std.debug.print("alg: {d}, n: {d}, k_min: {d}, k_max: {d}, runs: {d}\n", .{ alg, n, k_min, k_max, runs });
-    assert(alg < 5);
-    assert(n > 4);
-    assert(k_min <= k_max and k_min > 2 and k_max < n);
+    //assert(alg < 5);
+    //assert(n > 4);
+    assert(k_min <= k_max and k_min >= 2 and k_max <= n);
 
     var r: u8 = 0;
     while (r < runs) : (r += 1) {
@@ -35,9 +35,17 @@ pub fn main() !void {
             switch (alg) {
                 0 => try lex(n, k),
                 1 => try colex(n, k),
-                2 => try lam(n, k),
-                3 => try coolLex(n, k),
-                4 => try revdoor(n, k),
+                2 => try knuthCoLex(n, k),
+
+                3 => try lam(n, k),
+                4 => try coolLex(n, k),
+                5 => try revdoor(n, k),
+
+                6 => try lex(n, k),
+                7 => try lexWithoutCapture(n, k),
+                8 => try lexWithCapture(n, k),
+
+
                 else => unreachable,
             }
         }
@@ -55,6 +63,37 @@ pub fn lex(n: u6, k: u6) !void {
     var cnt: usize = 1;
     while (l.next()) {
         // visit a
+        var b = a;
+        _ = b;
+        cnt += 1;
+    }
+    try std.testing.expectEqual(comb.binomial(n, k), cnt);
+}
+
+pub fn lexWithoutCapture(n: u6, k: u6) !void {
+    var l = comb.LexT(MAX_N).init(n, k);
+    var cnt: usize = 0;
+    while (l.hasNext()) {
+        _ = l.current();
+        cnt += 1;
+    }
+    try std.testing.expectEqual(comb.binomial(n, k), cnt);
+}
+
+pub fn lexWithCapture(n: u6, k: u6) !void {
+    var l = comb.LexT(MAX_N).init(n, k);
+    var cnt: usize = 0;
+    while (l.next()) |_| {
+        cnt += 1;
+    }
+    try std.testing.expectEqual(comb.binomial(n, k), cnt);
+}
+
+
+pub fn knuthCoLex(n: u6, k: u6) !void {
+    var l = comb.KnuthCoLex(MAX_N).init(n, k);
+    var cnt: usize = 0;
+    while (l.next()) |_| {
         cnt += 1;
     }
     try std.testing.expectEqual(comb.binomial(n, k), cnt);

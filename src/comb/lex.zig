@@ -60,6 +60,9 @@ pub const Lex = struct {
     }
 };
 
+const expectEqualSlices = std.testing.expectEqualSlices;
+const expectEqual = std.testing.expectEqual;
+
 const test_data_5_3 = [10][3]u8{
     [_]u8{ 0, 1, 2 },
     [_]u8{ 0, 1, 3 },
@@ -78,17 +81,128 @@ test "3/5" {
     var l = Lex.init(&buf, 5);
 
     // visit first combination
-    try std.testing.expectEqualSlices(u8, &test_data_5_3[0], &buf);
+    try expectEqualSlices(u8, &test_data_5_3[0], &buf);
 
     var j: u8 = 1;
     while (l.next()) : (j += 1) {
         // call next and then visit another combination
-        try std.testing.expectEqualSlices(u8, &test_data_5_3[j], &buf);
+        try expectEqualSlices(u8, &test_data_5_3[j], &buf);
     }
     // next returns false
-    try std.testing.expectEqual(l.next(), false);
+    try expectEqual(l.next(), false);
 
     // rewind to the start
     l.first();
-    try std.testing.expectEqualSlices(u8, &test_data_5_3[0], &buf);
+    try expectEqualSlices(u8, &test_data_5_3[0], &buf);
+}
+
+pub fn LexT(comptime max_k: u8) type {
+    return struct {
+        k: u8,
+        n: u8,
+        buf: [max_k]u8 = undefined, // internal buffer
+        x: []u8 = undefined, // holds current combination
+
+        const Self = @This();
+
+        pub fn init(n: u8, k: u8) Self {
+            assert(n >= k and k <= max_k);
+            var s = Self{
+                .n = n,
+                .k = k,
+            };
+            s.reset();
+            return s;
+        }
+
+        // Reset x to zero len so we can detect first call to next.
+        inline fn reset(s: *Self) void {
+            s.x = s.buf[0..0];
+        }
+
+        // Initialize x with first combination.
+        fn first(s: *Self) void {
+            s.x = s.buf[0..s.k];
+            var i: u8 = 0;
+            while (i < s.k) : (i += 1) {
+                s.x[i] = i;
+            }
+        }
+
+        inline fn isLast(s: *Self) bool {
+            return s.x[0] == s.n - s.k;
+        }
+
+        pub inline fn current(s: *Self) []u8 {
+            return s.x;
+        }
+
+        // Iterates over all combinations.
+        // Returns next combination or null when no more combinations.
+        // Example:
+        //   while (lex.next()) |comb| {
+        //      // use comb
+        //   }
+        pub fn next(s: *Self) ?[]u8 {
+            return if (s.hasNext()) s.current() else null;
+        }
+
+        // For usage in while without capture.
+        // Example:
+        //   while (lex.hasNext()) {
+        //      const comb = lex.current();
+        //      // use comb
+        //   }
+        pub fn hasNext(s: *Self) bool {
+            // first call
+            if (s.x.len == 0) {
+                s.first();
+                return true;
+            }
+
+            // current combination is the last
+            if (s.isLast()) {
+                return false;
+            }
+
+            s.calcNext();
+            return true;
+        }
+
+        fn calcNext(s: *Self) void {
+            var j = s.k - 1;
+            // easy case:  highest element != highest possible value:
+            if (s.x[j] < (s.n - 1)) {
+                s.x[j] += 1;
+                return;
+            }
+
+            // find highest falling edge:
+            while (1 == (s.x[j] - s.x[j - 1])) {
+                j -= 1;
+            }
+
+            // move lowest element of highest block up:
+            s.x[j - 1] += 1;
+            var z = s.x[j - 1];
+            // ... and attach rest of block:
+            while (j < s.k) : (j += 1) {
+                z += 1;
+                s.x[j] = z;
+            }
+        }
+    };
+}
+
+test "3/5 for LexT" {
+    var l = LexT(3).init(5, 3);
+
+    var j: u8 = 0;
+    // visit all combinations
+    while (l.next()) |comb| {
+        try expectEqualSlices(u8, &test_data_5_3[j], comb);
+        j += 1;
+    }
+    try expectEqual(test_data_5_3.len, j); // we visited all of them
+    try expectEqual(l.next(), null); // all other calls to next returns null
 }
