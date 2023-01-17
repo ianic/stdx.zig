@@ -11,7 +11,7 @@ pub fn Lex(comptime max_k: u8) type {
     return struct {
         k: u8,
         n: u8,
-        x: [max_k]u8 = undefined, // internal buffer
+        x: [max_k + 1]u8 = undefined, // internal buffer
 
         const Self = @This();
 
@@ -22,6 +22,7 @@ pub fn Lex(comptime max_k: u8) type {
                 .k = k,
             };
             s.x[k - 1] = 0; // signal that first is not called
+            //s.first();
             return s;
         }
 
@@ -31,33 +32,18 @@ pub fn Lex(comptime max_k: u8) type {
             while (i < s.k) : (i += 1) {
                 s.x[i] = i;
             }
+            //s.x[s.k - 1] -= 1;
         }
 
-        pub fn isLast(s: *Self) bool {
+        fn isLast(s: *Self) bool {
             return s.x[0] == s.n - s.k;
         }
 
-        pub fn current(s: *Self) []u8 {
+        fn current(s: *Self) []u8 {
             return s.x[0..s.k];
         }
 
-        // Iterates over all combinations.
-        // Returns next combination or null when no more combinations.
-        // Example:
-        //   while (lex.next()) |comb| {
-        //      // use comb
-        //   }
-        pub fn next(s: *Self) ?[]u8 {
-            return if (s.hasNext()) s.current() else null;
-        }
-
-        // For usage in while without capture.
-        // Example:
-        //   while (lex.hasNext()) {
-        //      const comb = lex.current();
-        //      // use comb
-        //   }
-        fn hasNext(s: *Self) bool {
+        fn tryMove(s: *Self) bool {
             // first call
             if (s.x[s.k - 1] == 0) {
                 s.first();
@@ -67,11 +53,11 @@ pub fn Lex(comptime max_k: u8) type {
             // current combination is the last
             if (s.isLast()) return false;
 
-            s.calcNext();
+            s.move();
             return true;
         }
 
-        fn calcNext(s: *Self) void {
+        fn move(s: *Self) void {
             var j = s.k - 1;
             // easy case:  highest element != highest possible value:
             if (s.x[j] < (s.n - 1)) {
@@ -80,7 +66,7 @@ pub fn Lex(comptime max_k: u8) type {
             }
 
             // find highest falling edge:
-            while (1 == (s.x[j] - s.x[j - 1])) {
+            while (s.x[j - 1] + 1 == s.x[j]) {
                 j -= 1;
             }
 
@@ -92,6 +78,16 @@ pub fn Lex(comptime max_k: u8) type {
                 z += 1;
                 s.x[j] = z;
             }
+        }
+
+        // Iterates over all combinations.
+        // Returns next combination or null when no more combinations.
+        // Example:
+        //   while (lex.next()) |comb| {
+        //      // use comb
+        //   }
+        pub fn next(s: *Self) ?[]u8 {
+            return if (s.tryMove()) s.current() else null;
         }
     };
 }
@@ -110,7 +106,7 @@ test "3/5 Lex" {
 }
 
 test "3/5  ensure working k>2" {
-    if (true) return error.SkipZigTest;
+    //    if (true) return error.SkipZigTest;
 
     const n = 5;
     var k: u8 = 2;

@@ -26,6 +26,8 @@ pub fn CoLex(comptime max_k: u8) type {
             return s;
         }
 
+        // create first combination which will be unchanged in first call to move
+        // that will change only first sentinel
         fn first(s: *Self) void {
             var i: u8 = 0;
             while (i < s.k) : (i += 1) {
@@ -45,8 +47,10 @@ pub fn CoLex(comptime max_k: u8) type {
 
         fn tryMove(s: *Self) bool {
             if (s.x[s.k + 1] != 0) return false;
-            s.move();
-            if (s.isLast()) s.x[s.k + 1] = 1; // use second sentinel to signal isLast for next loop
+            {
+                s.move();
+                if (s.isLast()) s.x[s.k + 1] = 1; // use second sentinel to signal isLast for next loop
+            }
             return true;
         }
 
