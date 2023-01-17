@@ -12,7 +12,6 @@ pub fn CoLex(comptime max_k: u8) type {
         n: u8,
         k: u8,
         x: [max_k + 2]u8 = undefined, // internal buffer
-        done: bool = false,
 
         const Self = @This();
 
@@ -46,9 +45,8 @@ pub fn CoLex(comptime max_k: u8) type {
 
         // find next combination
         fn hasNext(s: *Self) bool {
-            if (s.done) return false;
+            if (s.x[s.k + 1] != 0) return false;
             s.calcNext();
-            s.done = s.isLast();
             return true;
         }
 
@@ -59,7 +57,8 @@ pub fn CoLex(comptime max_k: u8) type {
                 s.x[i] = i;
             }
             s.x[i] += 1; // move edge element up
-            s.x[s.k] = 0;
+            s.x[s.k] = 0; // set sentinel after first iteration
+            if (s.isLast()) s.x[s.k + 1] = 1; // use second sentinel to signal isLast
         }
 
         pub fn next(s: *Self) ?[]u8 {
