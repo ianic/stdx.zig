@@ -16,7 +16,7 @@ pub fn Lex(comptime max_k: u8) type {
         const Self = @This();
 
         pub fn init(n: u8, k: u8) Self {
-            assert(n >= k and k <= max_k and k > 0);
+            assert(n >= k and k <= max_k and k > 1);
             var s = Self{
                 .n = n,
                 .k = k,
@@ -57,7 +57,7 @@ pub fn Lex(comptime max_k: u8) type {
         //      const comb = lex.current();
         //      // use comb
         //   }
-        pub fn hasNext(s: *Self) bool {
+        fn hasNext(s: *Self) bool {
             // first call
             if (s.x[s.k - 1] == 0) {
                 s.first();
@@ -107,6 +107,22 @@ test "3/5 Lex" {
     }
     try expectEqual(lex_test_data_5_3.len, j); // we visited all of them
     try expectEqual(l.next(), null); // all other calls to next returns null
+}
+
+test "3/5  ensure working k>2" {
+    if (true) return error.SkipZigTest;
+
+    const n = 5;
+    var k: u8 = 2;
+    const T = Lex(n);
+    std.debug.print("\n", .{});
+    while (k <= n) : (k += 1) {
+        std.debug.print("{d} / {d}\n", .{ k, n });
+        var l = T.init(n, k);
+        while (l.next()) |comb| {
+            std.debug.print("\t{d}\n", .{comb});
+        }
+    }
 }
 
 const lex_test_data_5_3 = [10][3]u8{

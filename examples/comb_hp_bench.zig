@@ -34,14 +34,13 @@ pub fn main() !void {
         while (k <= k_max) : (k += 1) {
             switch (alg) {
                 0 => try colex(n, k),
-                1 => try knuthCoLex(n, k),
-
-                2 => try lex(n, k),
-                3 => try lexWithoutCapture(n, k),
+                1 => try lex(n, k),
 
                 5 => try lam(n, k),
                 6 => try coolLex(n, k),
                 7 => try revdoor(n, k),
+
+                10 => try knuthCoLex(n, k),
 
                 else => unreachable,
             }
@@ -52,16 +51,6 @@ pub fn main() !void {
 const MAX_N = 64;
 var buf: [MAX_N]u8 = undefined;
 var buf_u1: [MAX_N]u1 = undefined;
-
-pub fn lexWithoutCapture(n: u6, k: u6) !void {
-    var l = comb.Lex(MAX_N).init(n, k);
-    var cnt: usize = 0;
-    while (l.hasNext()) {
-        _ = l.current();
-        cnt += 1;
-    }
-    try std.testing.expectEqual(comb.binomial(n, k), cnt);
-}
 
 pub fn lex(n: u6, k: u6) !void {
     var l = comb.Lex(MAX_N).init(n, k);
@@ -100,18 +89,7 @@ fn lam(n: u6, k: u6) !void {
 pub fn colex(n: u6, k: u6) !void {
     var l = comb.CoLex(MAX_N).init(n, k);
     var cnt: usize = 0;
-    // l.first();
-    // while (true) {
-    //     _ =  l.current(); // use current
-    //     cnt += 1;
-
-    //     if (l.isLast()) break;
-    //     l.moveNext();
-    // }
-
-    //var cnt: usize = 0;
     while (l.next()) |_|  {
-        //_ =  l.current(); // use current
         cnt += 1;
     }
     try std.testing.expectEqual(comb.binomial(n, k), cnt);
