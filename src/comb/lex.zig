@@ -11,7 +11,7 @@ pub fn Lex(comptime max_k: u8) type {
     return struct {
         k: u8,
         n: u8,
-        x: [max_k + 1]u8 = undefined, // internal buffer
+        x: [max_k]u8 = undefined, // internal buffer
 
         const Self = @This();
 
@@ -22,7 +22,6 @@ pub fn Lex(comptime max_k: u8) type {
                 .k = k,
             };
             s.x[k - 1] = 0; // signal that first is not called
-            //s.first();
             return s;
         }
 
@@ -32,7 +31,6 @@ pub fn Lex(comptime max_k: u8) type {
             while (i < s.k) : (i += 1) {
                 s.x[i] = i;
             }
-            //s.x[s.k - 1] -= 1;
         }
 
         fn isLast(s: *Self) bool {
@@ -51,8 +49,8 @@ pub fn Lex(comptime max_k: u8) type {
             }
 
             // current combination is the last
-            if (s.isLast()) return false;
-
+            if (s.isLast())
+                return false;
             s.move();
             return true;
         }
