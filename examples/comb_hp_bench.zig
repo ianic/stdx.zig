@@ -6,7 +6,6 @@ const assert = std.debug.assert;
 const expectEqualSlices = std.testing.expectEqualSlices;
 const expectEqual = std.testing.expectEqual;
 
-
 fn arg2u8(pos: usize) !u6 {
     const arg = std.os.argv[pos];
     if (arg[1] == 0) {
@@ -45,7 +44,6 @@ pub fn main() !void {
 
                 6 => try coolLex(n, k),
 
-
                 10 => try knuthCoLex(n, k),
 
                 else => unreachable,
@@ -57,16 +55,19 @@ pub fn main() !void {
 const MAX_N = 64;
 var buf: [MAX_N]u8 = undefined;
 var buf_u1: [MAX_N]u1 = undefined;
+var prevent_optimization: []u8 = undefined;
 
 pub fn lex(n: u6, k: u6) !void {
-    var l = comb.Lex(MAX_N).init(n, k);
+    var l = comb.Lex.init(n, k, &buf);
     var cnt: usize = 0;
-    while (l.next()) |_| {
+    var hasMore = true;
+    while (hasMore) : (hasMore = l.more()) {
         cnt += 1;
+        prevent_optimization = l.current();
     }
-    try std.testing.expectEqual(comb.binomial(n, k), cnt);
+    try expectEqual(comb.binomial(n, k), cnt);
+    try expectEqual(@as(usize, k), prevent_optimization.len);
 }
-
 
 pub fn knuthCoLex(n: u6, k: u6) !void {
     var l = comb.KnuthCoLex(MAX_N).init(n, k);
@@ -74,7 +75,7 @@ pub fn knuthCoLex(n: u6, k: u6) !void {
     while (l.next()) |_| {
         cnt += 1;
     }
-    try std.testing.expectEqual(comb.binomial(n, k), cnt);
+    try expectEqual(comb.binomial(n, k), cnt);
 }
 
 fn lam(n: u6, k: u6) !void {
@@ -89,16 +90,18 @@ fn lam(n: u6, k: u6) !void {
     };
     var wrapper: CallbackWrapper = .{};
     try comb.lam(n, k, CallbackWrapper.callback, &wrapper);
-    try std.testing.expectEqual(comb.binomial(n, k), wrapper.cnt);
+    try expectEqual(comb.binomial(n, k), wrapper.cnt);
 }
 
 pub fn colex(n: u6, k: u6) !void {
     var l = comb.CoLex(MAX_N).init(n, k);
     var cnt: usize = 0;
-    while (l.next()) |_|  {
+    while (l.next()) |current| {
         cnt += 1;
+        prevent_optimization = current;
     }
-    try std.testing.expectEqual(comb.binomial(n, k), cnt);
+    try expectEqual(comb.binomial(n, k), cnt);
+    try expectEqual(@as(usize, k), prevent_optimization.len);
 }
 
 pub fn coolLex(n: u6, k: u6) !void {
@@ -110,21 +113,18 @@ pub fn coolLex(n: u6, k: u6) !void {
         // visit a
         cnt += 1;
     }
-    try std.testing.expectEqual(comb.binomial(n, k), cnt);
+    try expectEqual(comb.binomial(n, k), cnt);
 }
-
-
-var unomptimized: []u8 = undefined;
 
 pub fn revdoor(n: u6, k: u6) !void {
     var l = comb.RevDoor.init(n, k, &buf);
 
     var cnt: usize = 0;
     var hasMore = true;
-    while (hasMore): (hasMore = l.more()) {
-        unomptimized = l.current();
+    while (hasMore) : (hasMore = l.more()) {
+        prevent_optimization = l.current();
         cnt += 1;
     }
-    try std.testing.expectEqual(comb.binomial(n, k), cnt);
-    try expectEqual(@as(usize, k), unomptimized.len);
+    try expectEqual(comb.binomial(n, k), cnt);
+    try expectEqual(@as(usize, k), prevent_optimization.len);
 }
