@@ -41,10 +41,11 @@ pub fn main() !void {
                 1 => try colex(n, k),
                 2 => try knuthCoLex(n, k),
 
-                3 => try lam(n, k),
+                3 => try coolLex(n, k),
+
                 4 => try revdoor(n, k),
 
-                6 => try coolLex(n, k),
+                5 => try lam(n, k),
 
                 else => unreachable,
             }
@@ -56,6 +57,7 @@ const MAX_N = 64;
 var buf: [MAX_N]u8 = undefined;
 var buf_u1: [MAX_N]u1 = undefined;
 var prevent_optimization: []u8 = undefined;
+var prevent_optimization_u1: []u1 = undefined;
 
 pub fn lex(n: u6, k: u6) !void {
     var l = comb.Lex.init(n, k, &buf);
@@ -98,26 +100,27 @@ fn lam(n: u6, k: u6) !void {
         cnt: usize = 0,
         const Self = @This();
         pub fn callback(self: *Self, a: []u8) !void {
-            _ = a;
-            //std.debug.print("{d}\n", .{a});
+            prevent_optimization = a;
             self.cnt += 1;
         }
     };
     var wrapper: CallbackWrapper = .{};
     try comb.lam(n, k, CallbackWrapper.callback, &wrapper);
     try expectEqual(comb.binomial(n, k), wrapper.cnt);
+    try expectEqual(@as(usize, k), prevent_optimization.len);
 }
 
 pub fn coolLex(n: u6, k: u6) !void {
-    var a = buf_u1[0..n];
-    var cl = comb.CoolLex.init(a, k);
-    // visit a
-    var cnt: usize = 1;
-    while (cl.next()) {
-        // visit a
+    var alg = comb.CoolLex.init(n, k, &buf_u1);
+
+    var cnt: usize = 0;
+    var hasMore = true;
+    while (hasMore) : (hasMore = alg.more()) {
+        prevent_optimization_u1 = alg.current();
         cnt += 1;
     }
     try expectEqual(comb.binomial(n, k), cnt);
+    try expectEqual(@as(usize, n), prevent_optimization_u1.len);
 }
 
 pub fn revdoor(n: u6, k: u6) !void {

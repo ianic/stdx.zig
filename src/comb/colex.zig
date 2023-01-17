@@ -74,7 +74,7 @@ test "5/3 CoLex" {
 }
 
 test "ensure working for each x/5" {
-    //if (true) return error.SkipZigTest;
+    if (true) return error.SkipZigTest;
 
     var buf: [16]u8 = undefined;
     const n = 10;

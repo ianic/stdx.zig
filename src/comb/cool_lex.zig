@@ -27,47 +27,52 @@ pub const CoolLex = struct {
     const Self = @This();
 
     // Provide slice of n elements.
-    // To get all combinations r of n elements.
-    pub fn init(a: []u1, k: u8) Self {
-        const n = @intCast(u8, a.len);
-        assert(n > 0 and k > 0 and n >= k);
+    // To get all combinations k of n elements.
+    pub fn init(n: u8, k: u8, buf: []u1) Self {
+        assert(n > 0 and k > 0 and n >= k and buf.len >= n);
 
-        var c = Self{
-            .a = a,
+        var s = Self{
+            .a = buf[0..n],
             .x = k - 1,
             .y = k - 1,
             .n = n,
             .k = k,
             .m = n - 1, // max c.x
         };
-        c.first();
-        return c;
+        s.first();
+        return s;
     }
 
-    pub fn first(c: *Self) void {
+    pub fn first(s: *Self) void {
         var i: u8 = 0;
-        while (i < c.k) : (i += 1) {
-            c.a[i] = 1;
+        while (i < s.k) : (i += 1) {
+            s.a[i] = 1;
         }
-        while (i < c.n) : (i += 1) {
-            c.a[i] = 0;
+        while (i < s.n) : (i += 1) {
+            s.a[i] = 0;
         }
+        s.x = s.k - 1;
+        s.y = s.k - 1;
     }
 
-    pub fn next(c: *Self) bool {
-        if (c.x == c.m) {
+    pub fn current(s: *Self) []u1 {
+        return s.a;
+    }
+
+    pub fn more(s: *Self) bool {
+        if (s.x == s.m) {
             return false;
         }
 
-        c.a[c.x] = 0;
-        c.a[c.y] = 1;
-        c.x += 1;
-        c.y += 1;
-        if (c.a[c.x] == 0) {
-            c.a[c.x] = 1;
-            c.a[0] = 0;
-            if (c.y > 1) c.x = 1;
-            c.y = 0;
+        s.a[s.x] = 0;
+        s.a[s.y] = 1;
+        s.x += 1;
+        s.y += 1;
+        if (s.a[s.x] == 0) {
+            s.a[s.x] = 1;
+            s.a[0] = 0;
+            if (s.y > 1) s.x = 1;
+            s.y = 0;
         }
         return true;
     }
@@ -77,10 +82,19 @@ test "CoolLex show" {
     if (SKIP_SHOW_TESTS) return error.SkipZigTest;
 
     std.debug.print("\n", .{});
-    var b = [_]u8{0} ** 5;
-    var cl = CoolLex.init(&b, 3);
-    while (cl.next()) |c| {
-        std.debug.print("{d}\n", .{c});
+
+    const n = 5;
+    var buf: [n]u1 = undefined;
+
+    var k: u8 = 1;
+    while (k <= n) : (k += 1) {
+        var alg = CoolLex.init(n, k, &buf);
+        var hasMore = true;
+
+        std.debug.print("{d} / {d}\n", .{ k, n });
+        while (hasMore) : (hasMore = alg.more()) {
+            std.debug.print("{d}\n", .{alg.current()});
+        }
     }
 }
 
@@ -98,22 +112,24 @@ const test_data_5_3 = [10][5]u1{
 };
 
 test "CoolLex" {
-    var a: [5]u1 = undefined;
-    var cl = CoolLex.init(&a, 3);
+    var buf: [5]u1 = undefined;
+    var alg = CoolLex.init(5, 3, &buf);
 
-    // visit first combination
-    try std.testing.expectEqualSlices(u1, &test_data_5_3[0], &a);
-
-    var j: usize = 1;
-    while (cl.next()) : (j += 1) {
+    var j: usize = 0;
+    var hasMore = true;
+    while (hasMore) : ({
+        hasMore = alg.more();
+        j += 1;
+    }) {
         // call next and then visit another combination
-        try std.testing.expectEqualSlices(u1, &test_data_5_3[j], &a);
+        try std.testing.expectEqualSlices(u1, &test_data_5_3[j], alg.current());
     }
     // next returns false
-    try std.testing.expectEqual(cl.next(), false);
+    try std.testing.expectEqual(alg.more(), false);
+
     // rewind to the start
-    cl.first();
-    try std.testing.expectEqualSlices(u1, &test_data_5_3[0], &a);
+    alg.first();
+    try std.testing.expectEqualSlices(u1, &test_data_5_3[0], alg.current());
 }
 
 const SKIP_SHOW_TESTS = true;
