@@ -7,207 +7,183 @@ const expectEqual = std.testing.expectEqual;
 // fxtbook chapter 6.2.1
 // Returns set: list of elements indexes.
 // in co-lexicographic order
-pub fn CoLex(comptime max_k: u8) type {
-    return struct {
-        n: u8,
-        k: u8,
-        x: [max_k + 2]u8 = undefined, // internal buffer
+pub const CoLex = struct {
+    n: u8,
+    k: u8,
+    x: []u8,
 
-        const Self = @This();
+    const Self = @This();
 
-        pub fn init(n: u8, k: u8) Self {
-            assert(n >= k and k <= max_k);
+    pub fn init(n: u8, k: u8, buf: []u8) Self {
+        assert(n >= k and buf.len > k);
+        var s = Self{
+            .n = n,
+            .k = k,
+            .x = buf[0 .. k + 1], // uses one sentinel
+        };
+        s.first();
+        return s;
+    }
 
-            var s = Self{
-                .n = n,
-                .k = k,
-            };
-            s.first();
-            return s;
+    // create first combination which will be unchanged in first call to move
+    // that will change only first sentinel
+    pub fn first(s: *Self) void {
+        var i: u8 = 0;
+        while (i < s.k) : (i += 1) {
+            s.x[i] = i;
         }
+        s.x[s.k] = 0; // set sentinel
+    }
 
-        // create first combination which will be unchanged in first call to move
-        // that will change only first sentinel
-        fn first(s: *Self) void {
-            var i: u8 = 0;
-            while (i < s.k) : (i += 1) {
-                s.x[i] = i;
-            }
-            s.x[s.k] = i; // sentinel
-            s.x[s.k + 1] = 0; // second sentinel, used only in first iteration of calcNext
-        }
+    pub fn current(s: *Self) []u8 {
+        return s.x[0..s.k];
+    }
 
-        fn current(s: *Self) []u8 {
-            return s.x[0..s.k];
-        }
+    pub fn more(s: *Self) bool {
+        if (s.isLast())
+            return false;
+        s.move();
+        return true;
+    }
 
-        fn isLast(s: *Self) bool {
-            return s.x[0] == (s.n - s.k);
-        }
+    fn isLast(s: *Self) bool {
+        return s.x[0] == (s.n - s.k);
+    }
 
-        fn tryMove(s: *Self) bool {
-            if (s.x[s.k + 1] != 0) return false;
-            {
-                s.move();
-                if (s.isLast()) s.x[s.k + 1] = 1; // use second sentinel to signal isLast for next loop
-            }
-            return true;
+    fn move(s: *Self) void {
+        var i: u8 = 0;
+        // until lowest rising edge:  attach block at low end
+        while (s.x[i] + 1 == s.x[i + 1]) : (i += 1) {
+            s.x[i] = i;
         }
-
-        fn move(s: *Self) void {
-            var i: u8 = 0;
-            // until lowest rising edge:  attach block at low end
-            while (s.x[i] + 1 == s.x[i + 1]) : (i += 1) {
-                s.x[i] = i;
-            }
-            s.x[i] += 1; // move edge element up
-            s.x[s.k] = 0; // set sentinel after first iteration
-        }
-
-        pub fn next(s: *Self) ?[]u8 {
-            return if (s.tryMove()) s.current() else null;
-        }
-    };
-}
+        s.x[i] += 1; // move edge element up
+    }
+};
 
 test "5/3 CoLex" {
-    var l = CoLex(5).init(5, 3);
+    var buf: [4]u8 = undefined;
+    var alg = CoLex.init(5, 3, &buf);
+
     var j: u8 = 0;
-    while (l.next()) |c| {
-        try expectEqualSlices(u8, &colex_test_data_5_3[j], c);
+    var hasMore = true;
+    while (hasMore) : (hasMore = alg.more()) {
+        try expectEqualSlices(u8, &colex_test_data_5_3[j], alg.current());
         j += 1;
     }
     try expectEqual(j, colex_test_data_5_3.len);
 }
 
-pub fn KnuthCoLex(comptime max_k: u8) type {
-    return struct {
-        k: u8,
-        n: u8,
-        buf: [max_k + 3]u8 = undefined,
-        x: []u8 = undefined,
-        j: u8 = 0,
+test "ensure working for each x/5" {
+    //if (true) return error.SkipZigTest;
 
-        const Self = @This();
+    var buf: [16]u8 = undefined;
+    const n = 10;
+    var k: u8 = 1;
+    std.debug.print("\n", .{});
 
-        pub fn init(n: u8, k: u8) Self {
-            var s = Self{
-                .n = n,
-                .k = k,
-            };
-            s.reset();
-            return s;
+    while (k <= n) : (k += 1) {
+        std.debug.print("{d} / {d}\n", .{ k, n });
+        var alg = KnuthCoLex.init(n, k, &buf);
+        var hasMore = true;
+        while (hasMore) : (hasMore = alg.more()) {
+            std.debug.print("\t{d}\n", .{alg.current()});
         }
+    }
+}
 
-        // Reset x to zero len so we can detect first call to next.
-        inline fn reset(s: *Self) void {
-            s.x = s.buf[0..0];
-        }
+pub const KnuthCoLex = struct {
+    k: u8,
+    n: u8,
+    x: []u8,
+    j: u8 = 0,
 
-        // Initialize x with first combination.
-        fn first(s: *Self) void {
-            s.x = s.buf[0 .. s.k + 3]; // 3 = zero based + 2 sentinels at end
-            s.x[0] = 0; // not used s.x is zero based
-            var j: u8 = 1;
-            while (j <= s.k) : (j += 1) {
-                s.x[j] = j - 1;
-            }
-            // two sentinels at end
-            s.x[s.k + 1] = s.n;
-            s.x[s.k + 2] = 0;
-            s.j = s.k;
+    const Self = @This();
 
-            // algorithm assumes k < n
-            // here we assure isLast to be true for that case so we don't use rest of the algorithm
-            if (s.k == s.n) s.j += 1;
-        }
+    pub fn init(n: u8, k: u8, buf: []u8) Self {
+        assert(n >= k and buf.len > k + 2);
+        var s = Self{
+            .n = n,
+            .k = k,
+            .x = buf[0 .. k + 3],
+        };
+        s.first();
+        return s;
+    }
 
-        inline fn isLast(s: *Self) bool {
-            return s.j > s.k;
-        }
+    // Initialize x with first combination.
+    fn first(s: *Self) void {
+        s.x[0] = 0; // not used s.x is zero based
 
-        pub inline fn current(s: *Self) []u8 {
-            // TODO not safe to call before first
-            return s.x[1 .. s.k + 1];
-        }
+        var j: u8 = 1;
+        while (j <= s.k) : (j += 1)
+            s.x[j] = j - 1;
 
-        pub fn next(s: *Self) ?[]u8 {
-            return if (s.hasNext()) s.current() else null;
-        }
+        // two sentinels at end
+        s.x[s.k + 1] = s.n;
+        s.x[s.k + 2] = 0;
+        s.j = s.k;
 
-        pub fn hasNext(s: *Self) bool {
-            // first call
-            if (s.x.len == 0) {
-                s.first();
-                return true;
-            }
+        // algorithm, without this, assumes k < n
+        // here we assure isLast to be true for that case so we don't use rest of the algorithm
+        if (s.k == s.n) s.j += 1;
+    }
 
-            // current combination is the last
-            if (s.isLast()) {
-                return false;
-            }
+    pub fn current(s: *Self) []u8 {
+        return s.x[1 .. s.k + 1];
+    }
 
-            return s.calcNext();
-        }
+    pub fn more(s: *Self) bool {
+        if (s.isLast())
+            return false;
+        return s.move();
+    }
 
-        fn calcNext(s: *Self) bool {
-            if (s.j > 0) {
-                // increase
-                s.x[s.j] = s.j;
-                s.j -= 1;
-                return true;
-            }
-            // easy case?
-            if (s.x[1] + 1 < s.x[2]) {
-                s.x[1] += 1;
-                return true;
-            }
-            s.j = 2;
-            var x: u8 = 0;
-            // find j
-            while (true) {
-                s.x[s.j - 1] = s.j - 2;
-                x = s.x[s.j] + 1;
-                if (x != s.x[s.j + 1]) break;
-                s.j += 1;
-            }
-            // done?
-            if (s.j > s.k) return false;
+    fn isLast(s: *Self) bool {
+        return s.j > s.k;
+    }
+
+    fn move(s: *Self) bool {
+        if (s.j > 0) {
             // increase
-            s.x[s.j] = x;
+            s.x[s.j] = s.j;
             s.j -= 1;
             return true;
         }
-    };
-}
+        // easy case?
+        if (s.x[1] + 1 < s.x[2]) {
+            s.x[1] += 1;
+            return true;
+        }
+        s.j = 2;
+        var x: u8 = 0;
+        // find j
+        while (true) {
+            s.x[s.j - 1] = s.j - 2;
+            x = s.x[s.j] + 1;
+            if (x != s.x[s.j + 1]) break;
+            s.j += 1;
+        }
+        // done?
+        if (s.j > s.k) return false;
+        // increase
+        s.x[s.j] = x;
+        s.j -= 1;
+        return true;
+    }
+};
 
 test "3/5 Knuth CoLex" {
-    var l = KnuthCoLex(128).init(5, 3);
+    var buf: [6]u8 = undefined;
+    var l = KnuthCoLex.init(5, 3, &buf);
     var j: u8 = 0;
-    // visit all combinations
-    while (l.next()) |comb| {
+    var hasMore = true;
+    while (hasMore) : (hasMore = l.more()) {
         //std.debug.print("{d}\n", .{comb});
-        try expectEqualSlices(u8, &colex_test_data_5_3[j], comb);
+        try expectEqualSlices(u8, &colex_test_data_5_3[j], l.current());
         j += 1;
     }
     try expectEqual(colex_test_data_5_3.len, j); // we visited all of them
-    try expectEqual(l.next(), null); // all other calls to next returns null
-}
-
-test "3/5  ensure working k=n" {
-    //if (true) return error.SkipZigTest;
-
-    const n = 5;
-    var k: u8 = 1;
-    const T = CoLex(n);
-    std.debug.print("\n", .{});
-    while (k <= n) : (k += 1) {
-        std.debug.print("{d} / {d}\n", .{ k, n });
-        var l = T.init(n, k);
-        while (l.next()) |comb| {
-            std.debug.print("\t{d}\n", .{comb});
-        }
-    }
+    try expectEqual(l.more(), false); // all other calls to next returns null
 }
 
 const colex_test_data_5_3 = [10][3]u8{

@@ -36,15 +36,15 @@ pub fn main() !void {
         var k: u6 = k_min;
         while (k <= k_max) : (k += 1) {
             switch (alg) {
-                0 => try colex(n, k),
-                1 => try lex(n, k),
+                0 => try lex(n, k),
+
+                1 => try colex(n, k),
+                2 => try knuthCoLex(n, k),
 
                 3 => try lam(n, k),
                 4 => try revdoor(n, k),
 
                 6 => try coolLex(n, k),
-
-                10 => try knuthCoLex(n, k),
 
                 else => unreachable,
             }
@@ -69,13 +69,28 @@ pub fn lex(n: u6, k: u6) !void {
     try expectEqual(@as(usize, k), prevent_optimization.len);
 }
 
-pub fn knuthCoLex(n: u6, k: u6) !void {
-    var l = comb.KnuthCoLex(MAX_N).init(n, k);
+pub fn colex(n: u6, k: u6) !void {
+    var l = comb.CoLex.init(n, k, &buf);
     var cnt: usize = 0;
-    while (l.next()) |_| {
+    var hasMore = true;
+    while (hasMore) : (hasMore = l.more()) {
         cnt += 1;
+        prevent_optimization = l.current();
     }
     try expectEqual(comb.binomial(n, k), cnt);
+    try expectEqual(@as(usize, k), prevent_optimization.len);
+}
+
+pub fn knuthCoLex(n: u6, k: u6) !void {
+    var l = comb.KnuthCoLex.init(n, k, &buf);
+    var cnt: usize = 0;
+    var hasMore = true;
+    while (hasMore) : (hasMore = l.more()) {
+        cnt += 1;
+        prevent_optimization = l.current();
+    }
+    try expectEqual(comb.binomial(n, k), cnt);
+    try expectEqual(@as(usize, k), prevent_optimization.len);
 }
 
 fn lam(n: u6, k: u6) !void {
@@ -91,17 +106,6 @@ fn lam(n: u6, k: u6) !void {
     var wrapper: CallbackWrapper = .{};
     try comb.lam(n, k, CallbackWrapper.callback, &wrapper);
     try expectEqual(comb.binomial(n, k), wrapper.cnt);
-}
-
-pub fn colex(n: u6, k: u6) !void {
-    var l = comb.CoLex(MAX_N).init(n, k);
-    var cnt: usize = 0;
-    while (l.next()) |current| {
-        cnt += 1;
-        prevent_optimization = current;
-    }
-    try expectEqual(comb.binomial(n, k), cnt);
-    try expectEqual(@as(usize, k), prevent_optimization.len);
 }
 
 pub fn coolLex(n: u6, k: u6) !void {
