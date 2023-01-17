@@ -75,7 +75,6 @@ pub const RevDoor = struct {
 
     fn increase(s: *Self) ?bool {
         var x = s.x[s.j] + 1;
-        //var y: u8 = if (s.j == s.k - 1) s.n else s.x[s.j + 1]; // instead of sentinel at s.x[s.k] = n
         var y: u8 = s.x[s.j + 1]; // can use sentinel
         if (x < y) {
             s.x[s.j - 1] = x - 1;
