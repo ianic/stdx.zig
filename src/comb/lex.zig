@@ -11,41 +11,34 @@ pub fn Lex(comptime max_k: u8) type {
     return struct {
         k: u8,
         n: u8,
-        buf: [max_k]u8 = undefined, // internal buffer
-        x: []u8 = undefined, // holds current combination
+        x: [max_k]u8 = undefined, // internal buffer
 
         const Self = @This();
 
         pub fn init(n: u8, k: u8) Self {
-            assert(n >= k and k <= max_k);
+            assert(n >= k and k <= max_k and k > 0);
             var s = Self{
                 .n = n,
                 .k = k,
             };
-            s.reset();
+            s.x[k - 1] = 0; // signal that first is not called
             return s;
-        }
-
-        // Reset x to zero len so we can detect first call to next.
-        inline fn reset(s: *Self) void {
-            s.x = s.buf[0..0];
         }
 
         // Initialize x with first combination.
         fn first(s: *Self) void {
-            s.x = s.buf[0..s.k];
             var i: u8 = 0;
             while (i < s.k) : (i += 1) {
                 s.x[i] = i;
             }
         }
 
-        inline fn isLast(s: *Self) bool {
+        pub fn isLast(s: *Self) bool {
             return s.x[0] == s.n - s.k;
         }
 
-        pub inline fn current(s: *Self) []u8 {
-            return s.x;
+        pub fn current(s: *Self) []u8 {
+            return s.x[0..s.k];
         }
 
         // Iterates over all combinations.
@@ -66,15 +59,13 @@ pub fn Lex(comptime max_k: u8) type {
         //   }
         pub fn hasNext(s: *Self) bool {
             // first call
-            if (s.x.len == 0) {
+            if (s.x[s.k - 1] == 0) {
                 s.first();
                 return true;
             }
 
             // current combination is the last
-            if (s.isLast()) {
-                return false;
-            }
+            if (s.isLast()) return false;
 
             s.calcNext();
             return true;
