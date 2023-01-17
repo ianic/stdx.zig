@@ -1,5 +1,8 @@
 const std = @import("std");
+
 const assert = std.debug.assert;
+const expectEqualSlices = std.testing.expectEqualSlices;
+const expectEqual = std.testing.expectEqual;
 
 pub const RevDoor = struct {
     n: u8,
@@ -9,14 +12,14 @@ pub const RevDoor = struct {
 
     const Self = @This();
 
-    pub fn init(x: []u8, n: u8) Self {
-        const k: u8 = @intCast(u8, x.len);
-        assert(n >= k and k > 0);
+    pub fn init(n: u8, k: u8, buf: []u8) Self {
+        // Uses 1 sentinel so buf.len needs to be at least k + 1!
+        assert(n >= k and k > 0 and buf.len >= k + 1);
 
         var s = Self{
             .n = n,
             .k = k,
-            .x = x,
+            .x = buf[0 .. k + 1],
             .j = 0,
         };
         s.first();
@@ -26,6 +29,7 @@ pub const RevDoor = struct {
     pub fn first(s: *Self) void {
         var i: u8 = 0;
         while (i < s.k) : (i += 1) s.x[i] = i;
+        s.x[s.k] = s.n; // set sentinel
     }
 
     pub fn current(s: *Self) []u8 {
@@ -71,7 +75,8 @@ pub const RevDoor = struct {
 
     fn increase(s: *Self) ?bool {
         var x = s.x[s.j] + 1;
-        var y: u8 = if (s.j == s.k - 1) s.n else s.x[s.j + 1]; // instead of sentinel at s.x[s.k] = n
+        //var y: u8 = if (s.j == s.k - 1) s.n else s.x[s.j + 1]; // instead of sentinel at s.x[s.k] = n
+        var y: u8 = s.x[s.j + 1]; // can use sentinel
         if (x < y) {
             s.x[s.j - 1] = x - 1;
             s.x[s.j] = x;
@@ -96,15 +101,19 @@ const test_data_5_3 = [10][3]u8{
 };
 
 test "3/5" {
-    var a: [3]u8 = undefined;
-    var l = RevDoor.init(&a, 5);
+    var buf: [4]u8 = undefined;
+    var alg = RevDoor.init(5, 3, &buf);
 
-    try std.testing.expectEqualSlices(u8, &test_data_5_3[0], &a); // visit first combination
-    var j: u8 = 1;
-    while (l.more()) : (j += 1) {
-        try std.testing.expectEqualSlices(u8, &test_data_5_3[j], &a); // all other
+    var j: u8 = 0;
+    var hasMore = true;
+    while (hasMore) : ({
+        hasMore = alg.more();
+        j += 1;
+    }) {
+        try std.testing.expectEqualSlices(u8, &test_data_5_3[j], alg.current());
     }
-    try std.testing.expectEqual(l.more(), false);
+    try std.testing.expectEqual(alg.more(), false);
+    try expectEqual(j, test_data_5_3.len);
 }
 
 const test_data_5_2 = [10][2]u8{
@@ -121,13 +130,37 @@ const test_data_5_2 = [10][2]u8{
 };
 
 test "2/5" {
-    var a: [2]u8 = undefined;
-    var l = RevDoor.init(&a, 5);
+    var buf: [3]u8 = undefined;
+    var alg = RevDoor.init(5, 2, &buf);
 
-    try std.testing.expectEqualSlices(u8, &test_data_5_2[0], &a); // visit first combination
-    var j: u8 = 1;
-    while (l.more()) : (j += 1) {
-        try std.testing.expectEqualSlices(u8, &test_data_5_2[j], &a); // all other
+    var j: u8 = 0;
+    var hasMore = true;
+    while (hasMore) : ({
+        hasMore = alg.more();
+        j += 1;
+    }) {
+        try std.testing.expectEqualSlices(u8, &test_data_5_2[j], alg.current());
     }
-    try std.testing.expectEqual(l.more(), false);
+    try std.testing.expectEqual(alg.more(), false);
+    try expectEqual(j, test_data_5_2.len);
+}
+
+test "print all x/5" {
+    if (true) return error.SkipZigTest;
+
+    var buf: [6]u8 = undefined;
+    const n = 5;
+
+    std.debug.print("\n", .{});
+
+    var k: u8 = 1;
+    while (k <= n) : (k += 1) {
+        std.debug.print("{d} / {d}\n", .{ k, n });
+        var alg = RevDoor.init(n, k, &buf);
+
+        var hasMore = true;
+        while (hasMore) : (hasMore = alg.more()) {
+            std.debug.print("\t{d}\n", .{alg.current()});
+        }
+    }
 }

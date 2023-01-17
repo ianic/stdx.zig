@@ -117,8 +117,7 @@ pub fn coolLex(n: u6, k: u6) !void {
 var unomptimized: []u8 = undefined;
 
 pub fn revdoor(n: u6, k: u6) !void {
-    var a = buf[0..k];
-    var l = comb.RevDoor.init(a, n);
+    var l = comb.RevDoor.init(n, k, &buf);
 
     var cnt: usize = 0;
     var hasMore = true;
