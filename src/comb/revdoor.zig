@@ -5,75 +5,79 @@ pub const RevDoor = struct {
     n: u8,
     k: u8,
     j: u8,
-    a: []u8,
+    x: []u8,
 
     const Self = @This();
 
-    pub fn init(a: []u8, n: u6) Self {
-        const k: u8 = @intCast(u8, a.len);
-        assert(n >= k);
+    pub fn init(x: []u8, n: u8) Self {
+        const k: u8 = @intCast(u8, x.len);
+        assert(n >= k and k > 0);
 
-        var c = Self{
+        var s = Self{
             .n = n,
             .k = k,
-            .a = a,
+            .x = x,
             .j = 0,
         };
-        c.first();
-        return c;
+        s.first();
+        return s;
     }
 
-    pub fn first(c: *Self) void {
+    pub fn first(s: *Self) void {
         var i: u8 = 0;
-        while (i < c.k) : (i += 1) c.a[i] = i;
+        while (i < s.k) : (i += 1) s.x[i] = i;
     }
 
-    pub fn next(c: *Self) bool {
-        c.j = 1;
+    pub fn current(s: *Self) []u8 {
+        return s.x[0..s.k];
+    }
+
+    pub fn more(s: *Self) bool {
+        s.j = 1;
 
         // easy case?
-        if (c.k & 1 == 1) { // odd k (try to increase)
-            var x = c.a[0] + 1;
-            if (x < c.a[1]) {
-                c.a[0] = x;
+        if (s.k & 1 == 1) { // odd k (try to increase)
+            var x = s.x[0] + 1;
+            if (x < s.x[1]) {
+                s.x[0] = x;
                 return true;
             }
         } else { // even k (try to decrease)
-            var x = c.a[0];
+            var x = s.x[0];
             if (x != 0) {
-                c.a[0] = x - 1;
+                s.x[0] = x - 1;
                 return true;
             }
-            if (c.increase()) |r| return r;
+            if (s.increase()) |r| return r;
         }
 
         while (true) {
-            if (c.j == c.k) return false;
-            if (c.decrease()) |r| return r;
-            if (c.j == c.k) return false;
-            if (c.increase()) |r| return r;
+            if (s.j == s.k) return false;
+            if (s.decrease()) |r| return r;
+            if (s.j == s.k) return false;
+            if (s.increase()) |r| return r;
         }
     }
 
-    fn decrease(c: *Self) ?bool {
-        if (c.a[c.j] > c.j) {
-            c.a[c.j] = c.a[c.j - 1];
-            c.a[c.j - 1] = c.j - 1;
+    fn decrease(s: *Self) ?bool {
+        if (s.x[s.j] > s.j) {
+            s.x[s.j] = s.x[s.j - 1];
+            s.x[s.j - 1] = s.j - 1;
             return true;
         }
-        c.j += 1;
+        s.j += 1;
         return null;
     }
 
-    fn increase(c: *Self) ?bool {
-        var x = c.a[c.j] + 1;
-        var y: u8 = if (c.j == c.k - 1) c.n else c.a[c.j + 1]; // instead of sentinel at c.a[c.k] = n
+    fn increase(s: *Self) ?bool {
+        var x = s.x[s.j] + 1;
+        var y: u8 = if (s.j == s.k - 1) s.n else s.x[s.j + 1]; // instead of sentinel at s.x[s.k] = n
         if (x < y) {
-            c.a[c.j - 1] = x - 1;
-            c.a[c.j] = x;
+            s.x[s.j - 1] = x - 1;
+            s.x[s.j] = x;
             return true;
         }
-        c.j += 1;
+        s.j += 1;
         return null;
     }
 };
@@ -97,10 +101,10 @@ test "3/5" {
 
     try std.testing.expectEqualSlices(u8, &test_data_5_3[0], &a); // visit first combination
     var j: u8 = 1;
-    while (l.next()) : (j += 1) {
+    while (l.more()) : (j += 1) {
         try std.testing.expectEqualSlices(u8, &test_data_5_3[j], &a); // all other
     }
-    try std.testing.expectEqual(l.next(), false);
+    try std.testing.expectEqual(l.more(), false);
 }
 
 const test_data_5_2 = [10][2]u8{
@@ -122,8 +126,8 @@ test "2/5" {
 
     try std.testing.expectEqualSlices(u8, &test_data_5_2[0], &a); // visit first combination
     var j: u8 = 1;
-    while (l.next()) : (j += 1) {
+    while (l.more()) : (j += 1) {
         try std.testing.expectEqualSlices(u8, &test_data_5_2[j], &a); // all other
     }
-    try std.testing.expectEqual(l.next(), false);
+    try std.testing.expectEqual(l.more(), false);
 }

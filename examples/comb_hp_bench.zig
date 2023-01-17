@@ -1,7 +1,11 @@
 const std = @import("std");
 const stdx = @import("stdx");
 const comb = stdx.comb;
+
 const assert = std.debug.assert;
+const expectEqualSlices = std.testing.expectEqualSlices;
+const expectEqual = std.testing.expectEqual;
+
 
 fn arg2u8(pos: usize) !u6 {
     const arg = std.os.argv[pos];
@@ -36,9 +40,11 @@ pub fn main() !void {
                 0 => try colex(n, k),
                 1 => try lex(n, k),
 
-                5 => try lam(n, k),
+                3 => try lam(n, k),
+                4 => try revdoor(n, k),
+
                 6 => try coolLex(n, k),
-                7 => try revdoor(n, k),
+
 
                 10 => try knuthCoLex(n, k),
 
@@ -107,14 +113,19 @@ pub fn coolLex(n: u6, k: u6) !void {
     try std.testing.expectEqual(comb.binomial(n, k), cnt);
 }
 
+
+var unomptimized: []u8 = undefined;
+
 pub fn revdoor(n: u6, k: u6) !void {
     var a = buf[0..k];
     var l = comb.RevDoor.init(a, n);
-    // visit a
-    var cnt: usize = 1;
-    while (l.next()) {
-        // visit a
+
+    var cnt: usize = 0;
+    var hasMore = true;
+    while (hasMore): (hasMore = l.more()) {
+        unomptimized = l.current();
         cnt += 1;
     }
     try std.testing.expectEqual(comb.binomial(n, k), cnt);
+    try expectEqual(@as(usize, k), unomptimized.len);
 }
