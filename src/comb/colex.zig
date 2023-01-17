@@ -32,25 +32,25 @@ pub fn CoLex(comptime max_k: u8) type {
                 s.x[i] = i;
             }
             s.x[s.k] = i; // sentinel
-            s.x[s.k + 1] = 0; // second sentinel
+            s.x[s.k + 1] = 0; // second sentinel, used only in first iteration of calcNext
         }
 
-        pub fn current(s: *Self) []u8 {
+        fn current(s: *Self) []u8 {
             return s.x[0..s.k];
         }
 
-        pub fn isLast(s: *Self) bool {
+        fn isLast(s: *Self) bool {
             return s.x[0] == (s.n - s.k);
         }
 
-        // find next combination
-        fn hasNext(s: *Self) bool {
+        fn tryMove(s: *Self) bool {
             if (s.x[s.k + 1] != 0) return false;
-            s.calcNext();
+            s.move();
+            if (s.isLast()) s.x[s.k + 1] = 1; // use second sentinel to signal isLast for next loop
             return true;
         }
 
-        fn calcNext(s: *Self) void {
+        fn move(s: *Self) void {
             var i: u8 = 0;
             // until lowest rising edge:  attach block at low end
             while (s.x[i] + 1 == s.x[i + 1]) : (i += 1) {
@@ -58,11 +58,10 @@ pub fn CoLex(comptime max_k: u8) type {
             }
             s.x[i] += 1; // move edge element up
             s.x[s.k] = 0; // set sentinel after first iteration
-            if (s.isLast()) s.x[s.k + 1] = 1; // use second sentinel to signal isLast
         }
 
         pub fn next(s: *Self) ?[]u8 {
-            return if (s.hasNext()) s.current() else null;
+            return if (s.tryMove()) s.current() else null;
         }
     };
 }
@@ -192,7 +191,7 @@ test "3/5 Knuth CoLex" {
 }
 
 test "3/5  ensure working k=n" {
-    if (true) return error.SkipZigTest;
+    //if (true) return error.SkipZigTest;
 
     const n = 5;
     var k: u8 = 1;
