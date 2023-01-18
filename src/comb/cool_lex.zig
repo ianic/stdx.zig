@@ -60,9 +60,8 @@ pub const CoolLex = struct {
     }
 
     pub fn more(s: *Self) bool {
-        if (s.x == s.m) {
+        if (s.x == s.m)
             return false;
-        }
 
         s.a[s.x] = 0;
         s.a[s.y] = 1;
@@ -75,6 +74,12 @@ pub const CoolLex = struct {
             s.y = 0;
         }
         return true;
+    }
+
+    const Iterator = @import("iterator.zig").Iterator(CoolLex, []u1);
+
+    pub fn iter(s: *Self) Iterator {
+        return Iterator{ .alg = s, .is_first = s.x == s.y };
     }
 };
 
@@ -93,7 +98,7 @@ test "CoolLex show" {
 
         std.debug.print("{d} / {d}\n", .{ k, n });
         while (hasMore) : (hasMore = alg.more()) {
-            std.debug.print("{d}\n", .{alg.current()});
+            std.debug.print("{d} x={d}, y={d}\n", .{ alg.current(), alg.x, alg.y });
         }
     }
 }
@@ -130,6 +135,18 @@ test "CoolLex" {
     // rewind to the start
     alg.first();
     try std.testing.expectEqualSlices(u1, &test_data_5_3[0], alg.current());
+}
+
+test "CoolLex iterator" {
+    var buf: [5]u1 = undefined;
+    var alg = CoolLex.init(5, 3, &buf);
+    var iter = alg.iter();
+
+    var j: usize = 0;
+    while (iter.next()) |current| {
+        try std.testing.expectEqualSlices(u1, &test_data_5_3[j], current);
+        j += 1;
+    }
 }
 
 const SKIP_SHOW_TESTS = true;

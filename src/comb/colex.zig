@@ -1,4 +1,5 @@
 const std = @import("std");
+const iterator = @import("iterator.zig");
 
 const assert = std.debug.assert;
 const expectEqualSlices = std.testing.expectEqualSlices;
@@ -7,7 +8,7 @@ const expectEqual = std.testing.expectEqual;
 // fxtbook chapter 6.2.1
 // Returns set: list of elements indexes.
 // in co-lexicographic order
-pub const CoLex = struct {
+pub const FxtCoLex = struct {
     n: u8,
     k: u8,
     x: []u8,
@@ -58,11 +59,17 @@ pub const CoLex = struct {
         }
         s.x[i] += 1; // move edge element up
     }
+
+    const Iterator = iterator.Iterator(FxtCoLex, []u8);
+
+    pub fn iter(s: *Self) Iterator {
+        return Iterator{ .alg = s, .is_first = s.x[s.k - 1] == s.k - 1 };
+    }
 };
 
-test "5/3 CoLex" {
+test "5/3 FxtCoLex" {
     var buf: [4]u8 = undefined;
-    var alg = CoLex.init(5, 3, &buf);
+    var alg = FxtCoLex.init(5, 3, &buf);
 
     var j: u8 = 0;
     var hasMore = true;
@@ -71,6 +78,17 @@ test "5/3 CoLex" {
         j += 1;
     }
     try expectEqual(j, colex_test_data_5_3.len);
+
+    alg.first();
+
+    // iterator interface
+    var iter = alg.iter();
+    j = 0;
+    while (iter.next()) |current| {
+        try expectEqualSlices(u8, &colex_test_data_5_3[j], current);
+        j += 1;
+    }
+    try expectEqual(colex_test_data_5_3.len, j);
 }
 
 test "ensure working for each x/5" {
@@ -170,20 +188,38 @@ pub const KnuthCoLex = struct {
         s.j -= 1;
         return true;
     }
+
+    const Iterator = iterator.Iterator(KnuthCoLex, []u8);
+
+    pub fn iter(s: *Self) Iterator {
+        return Iterator{ .alg = s, .is_first = s.x[s.k] == s.k - 1 };
+    }
 };
 
 test "3/5 Knuth CoLex" {
     var buf: [6]u8 = undefined;
-    var l = KnuthCoLex.init(5, 3, &buf);
+    var alg = KnuthCoLex.init(5, 3, &buf);
+
+    // raw interface
     var j: u8 = 0;
-    var hasMore = true;
-    while (hasMore) : (hasMore = l.more()) {
-        //std.debug.print("{d}\n", .{comb});
-        try expectEqualSlices(u8, &colex_test_data_5_3[j], l.current());
+    var hasMore = true; // after init we have first combination in current
+    while (hasMore) : (hasMore = alg.more()) { // loop with check at the end
+        try expectEqualSlices(u8, &colex_test_data_5_3[j], alg.current());
         j += 1;
     }
     try expectEqual(colex_test_data_5_3.len, j); // we visited all of them
-    try expectEqual(l.more(), false); // all other calls to next returns null
+    try expectEqual(alg.more(), false); // all other calls to more returns false
+
+    alg.first(); // rewind
+
+    // iterator interface
+    var iter = alg.iter();
+    j = 0;
+    while (iter.next()) |current| {
+        try expectEqualSlices(u8, &colex_test_data_5_3[j], current);
+        j += 1;
+    }
+    try expectEqual(colex_test_data_5_3.len, j);
 }
 
 const colex_test_data_5_3 = [10][3]u8{

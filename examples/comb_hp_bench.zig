@@ -36,17 +36,23 @@ pub fn main() !void {
         var k: u6 = k_min;
         while (k <= k_max) : (k += 1) {
             switch (alg) {
+                // lexicographical order
                 0 => try lex(n, k),
 
+                // co-lexicographical order
                 1 => try colex(n, k),
                 2 => try knuthCoLex(n, k),
+                3 => try knuthCoLexIter(n, k),
 
-                3 => try coolLex(n, k),
+                // returns bits array
+                4 => try coolLex(n, k),
+                5 => try coolLexIter(n, k), // alternative interface
 
-                4 => try revdoor(n, k),
+                // revolving door
+                6 => try revdoor(n, k),
 
-                5 => try lam(n, k),
-
+                // callback interface
+                7 => try lam(n, k),
                 else => unreachable,
             }
         }
@@ -95,6 +101,18 @@ pub fn knuthCoLex(n: u6, k: u6) !void {
     try expectEqual(@as(usize, k), prevent_optimization.len);
 }
 
+pub fn knuthCoLexIter(n: u6, k: u6) !void {
+    var alg = comb.KnuthCoLex.init(n, k, &buf);
+    var cnt: usize = 0;
+    var iter = alg.iter();
+    while (iter.next()) |current| {
+        prevent_optimization = current;
+        cnt += 1;
+    }
+    try expectEqual(comb.binomial(n, k), cnt);
+    try expectEqual(@as(usize, k), prevent_optimization.len);
+}
+
 fn lam(n: u6, k: u6) !void {
     const CallbackWrapper = struct {
         cnt: usize = 0,
@@ -117,6 +135,19 @@ pub fn coolLex(n: u6, k: u6) !void {
     var hasMore = true;
     while (hasMore) : (hasMore = alg.more()) {
         prevent_optimization_u1 = alg.current();
+        cnt += 1;
+    }
+    try expectEqual(comb.binomial(n, k), cnt);
+    try expectEqual(@as(usize, n), prevent_optimization_u1.len);
+}
+
+pub fn coolLexIter(n: u6, k: u6) !void {
+    var alg = comb.CoolLex.init(n, k, &buf_u1);
+
+    var cnt: usize = 0;
+    var iter = alg.iter();
+    while (iter.next()) |current| {
+        prevent_optimization_u1 = current;
         cnt += 1;
     }
     try expectEqual(comb.binomial(n, k), cnt);
