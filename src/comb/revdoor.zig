@@ -1,9 +1,16 @@
 const std = @import("std");
+const iterator = @import("iterator.zig");
 
 const assert = std.debug.assert;
 const expectEqualSlices = std.testing.expectEqualSlices;
 const expectEqual = std.testing.expectEqual;
 
+// This is zig implementation of fxt/src/comb/combination-revdoor.h from fxtbook.
+// fxtbook quotes:
+//   // A very efficient (revolving door) algorithm to generate the
+//   // sets for the Gray code is given comb in/combination-revdoor.h
+//   // Combinations (n choose k) in minimal-change order.
+//   // "Revolving door" algorithm following Knuth.
 pub const RevDoor = struct {
     n: u8,
     k: u8,
@@ -52,28 +59,30 @@ pub const RevDoor = struct {
                 s.x[0] = x - 1;
                 return true;
             }
-            if (s.increase()) |r| return r;
+            if (s.increase()) return true;
         }
 
         while (true) {
+            // try to decrease
             if (s.j == s.k) return false;
-            if (s.decrease()) |r| return r;
+            if (s.decrease()) return true;
+            // try to increase
             if (s.j == s.k) return false;
-            if (s.increase()) |r| return r;
+            if (s.increase()) return true;
         }
     }
 
-    fn decrease(s: *Self) ?bool {
+    fn decrease(s: *Self) bool {
         if (s.x[s.j] > s.j) {
             s.x[s.j] = s.x[s.j - 1];
             s.x[s.j - 1] = s.j - 1;
             return true;
         }
         s.j += 1;
-        return null;
+        return false;
     }
 
-    fn increase(s: *Self) ?bool {
+    fn increase(s: *Self) bool {
         var x = s.x[s.j] + 1;
         var y: u8 = s.x[s.j + 1]; // can use sentinel
         if (x < y) {
@@ -82,84 +91,87 @@ pub const RevDoor = struct {
             return true;
         }
         s.j += 1;
-        return null;
+        return false;
+    }
+
+    const Iterator = iterator.Iterator(RevDoor, []u8);
+
+    pub fn iter(s: *Self) Iterator {
+        return Iterator{ .alg = s, .is_first = s.x[s.k - 1] == s.k - 1 };
     }
 };
 
-const test_data_5_3 = [10][3]u8{
-    [_]u8{ 0, 1, 2 },
-    [_]u8{ 0, 2, 3 },
-    [_]u8{ 1, 2, 3 },
-    [_]u8{ 0, 1, 3 },
-    [_]u8{ 0, 3, 4 },
-    [_]u8{ 1, 3, 4 },
-    [_]u8{ 2, 3, 4 },
-    [_]u8{ 0, 2, 4 },
-    [_]u8{ 1, 2, 4 },
-    [_]u8{ 0, 1, 4 },
-};
-
-test "3/5" {
-    var buf: [4]u8 = undefined;
-    var alg = RevDoor.init(5, 3, &buf);
-
-    var j: u8 = 0;
-    var hasMore = true;
-    while (hasMore) : ({
-        hasMore = alg.more();
-        j += 1;
-    }) {
-        try std.testing.expectEqualSlices(u8, &test_data_5_3[j], alg.current());
-    }
-    try std.testing.expectEqual(alg.more(), false);
-    try expectEqual(j, test_data_5_3.len);
-}
-
-const test_data_5_2 = [10][2]u8{
-    [_]u8{ 0, 1 },
-    [_]u8{ 1, 2 },
-    [_]u8{ 0, 2 },
-    [_]u8{ 2, 3 },
-    [_]u8{ 1, 3 },
-    [_]u8{ 0, 3 },
-    [_]u8{ 3, 4 },
-    [_]u8{ 2, 4 },
-    [_]u8{ 1, 4 },
-    [_]u8{ 0, 4 },
-};
-
-test "2/5" {
-    var buf: [3]u8 = undefined;
-    var alg = RevDoor.init(5, 2, &buf);
-
-    var j: u8 = 0;
-    var hasMore = true;
-    while (hasMore) : ({
-        hasMore = alg.more();
-        j += 1;
-    }) {
-        try std.testing.expectEqualSlices(u8, &test_data_5_2[j], alg.current());
-    }
-    try std.testing.expectEqual(alg.more(), false);
-    try expectEqual(j, test_data_5_2.len);
-}
-
-test "print all x/5" {
-    if (true) return error.SkipZigTest;
-
-    var buf: [6]u8 = undefined;
-    const n = 5;
-
-    std.debug.print("\n", .{});
-
+test "*/5 RevDoor" {
+    var buf: [test_data_n + 1]u8 = undefined;
+    var i: usize = 0;
     var k: u8 = 1;
-    while (k <= n) : (k += 1) {
-        std.debug.print("{d} / {d}\n", .{ k, n });
-        var alg = RevDoor.init(n, k, &buf);
-
+    while (k <= test_data_n) : (k += 1) {
+        var alg = RevDoor.init(test_data_n, k, &buf);
         var hasMore = true;
-        while (hasMore) : (hasMore = alg.more()) {
-            std.debug.print("\t{d}\n", .{alg.current()});
+        while (hasMore) : ({
+            hasMore = alg.more();
+            i += 1;
+        }) {
+            const expected = test_data_5[i][0..k];
+            try expectEqualSlices(u8, expected, alg.current());
         }
     }
+    try expectEqual(i, 31); // we visited all of them
 }
+
+test "*/5 RevDoor iterator interface" {
+    var buf: [test_data_n + 3]u8 = undefined;
+    var i: usize = 0;
+    var k: u8 = 1;
+    while (k <= test_data_n) : (k += 1) {
+        var alg = RevDoor.init(test_data_n, k, &buf);
+        var iter = alg.iter();
+
+        while (iter.next()) |current| {
+            const expected = test_data_5[i][0..k];
+            try expectEqualSlices(u8, expected, current);
+            i += 1;
+        }
+    }
+    try expectEqual(i, 31); // we visited all of them
+}
+
+const test_data_n = 5;
+const test_data_5 = [_][5]u8{
+    [_]u8{ 0, 0xff, 0xff, 0xff, 0xff },
+	[_]u8{ 1, 0xff, 0xff, 0xff, 0xff },
+	[_]u8{ 2, 0xff, 0xff, 0xff, 0xff },
+	[_]u8{ 3, 0xff, 0xff, 0xff, 0xff },
+	[_]u8{ 4, 0xff, 0xff, 0xff, 0xff },
+
+	[_]u8{ 0, 1, 0xff, 0xff, 0xff },
+	[_]u8{ 1, 2, 0xff, 0xff, 0xff },
+	[_]u8{ 0, 2, 0xff, 0xff, 0xff },
+	[_]u8{ 2, 3, 0xff, 0xff, 0xff },
+	[_]u8{ 1, 3, 0xff, 0xff, 0xff },
+	[_]u8{ 0, 3, 0xff, 0xff, 0xff },
+	[_]u8{ 3, 4, 0xff, 0xff, 0xff },
+	[_]u8{ 2, 4, 0xff, 0xff, 0xff },
+	[_]u8{ 1, 4, 0xff, 0xff, 0xff },
+	[_]u8{ 0, 4, 0xff, 0xff, 0xff },
+
+	[_]u8{ 0, 1, 2, 0xff, 0xff },
+	[_]u8{ 0, 2, 3, 0xff, 0xff },
+	[_]u8{ 1, 2, 3, 0xff, 0xff },
+	[_]u8{ 0, 1, 3, 0xff, 0xff },
+	[_]u8{ 0, 3, 4, 0xff, 0xff },
+	[_]u8{ 1, 3, 4, 0xff, 0xff },
+	[_]u8{ 2, 3, 4, 0xff, 0xff },
+	[_]u8{ 0, 2, 4, 0xff, 0xff },
+	[_]u8{ 1, 2, 4, 0xff, 0xff },
+	[_]u8{ 0, 1, 4, 0xff, 0xff },
+
+	[_]u8{ 0, 1, 2, 3, 0xff },
+	[_]u8{ 0, 1, 3, 4, 0xff },
+	[_]u8{ 1, 2, 3, 4, 0xff },
+	[_]u8{ 0, 2, 3, 4, 0xff },
+	[_]u8{ 0, 1, 2, 4, 0xff },
+
+	[_]u8{ 0, 1, 2, 3, 4 },
+};
+
