@@ -4,10 +4,13 @@ pub const Lex = @import("comb/lex.zig").Lex;
 
 pub const FxtCoLex = @import("comb/colex.zig").FxtCoLex;
 pub const KnuthCoLex = @import("comb/colex.zig").KnuthCoLex;
+pub const CoLex = KnuthCoLex; // default colex implementation
+
+pub const RevDoor = @import("comb/revdoor.zig").RevDoor;
 
 pub const CoolLex = @import("comb/cool_lex.zig").CoolLex;
 pub const CoolLexBitStr = @import("comb/cool_lex.zig").CoolLexBitStr;
-pub const RevDoor = @import("comb/revdoor.zig").RevDoor;
+
 pub const SumOfProducts = @import("comb/sum_of_products.zig").SumOfProducts;
 
 pub const lam = @import("comb/lam.zig").lamStatic;
@@ -19,6 +22,7 @@ test {
     _ = @import("comb/colex.zig");
     _ = @import("comb/cool_lex.zig");
     _ = @import("comb/revdoor.zig");
+    _ = @import("comb/lam.zig");
 
     _ = @import("comb/sum_of_products.zig");
 }

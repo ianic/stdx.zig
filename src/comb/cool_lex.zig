@@ -1,5 +1,8 @@
 const std = @import("std");
+
 const assert = std.debug.assert;
+const expectEqualSlices = std.testing.expectEqualSlices;
+const expectEqual = std.testing.expectEqual;
 
 // Produces (n,k)-combinations in cool-lex order.
 // Implements the cool-lex algorithm to generate (n,k)-combinations.
@@ -83,27 +86,60 @@ pub const CoolLex = struct {
     }
 };
 
-test "CoolLex show" {
-    if (SKIP_SHOW_TESTS) return error.SkipZigTest;
-
-    std.debug.print("\n", .{});
-
-    const n = 5;
-    var buf: [n]u1 = undefined;
-
+test "*/5 CoolLex" {
+    var buf: [test_data_n]u1 = undefined;
+    var i: usize = 0;
     var k: u8 = 1;
-    while (k <= n) : (k += 1) {
-        var alg = CoolLex.init(n, k, &buf);
+    while (k <= test_data_n) : (k += 1) {
+        var alg = CoolLex.init(test_data_n, k, &buf);
         var hasMore = true;
-
-        std.debug.print("{d} / {d}\n", .{ k, n });
-        while (hasMore) : (hasMore = alg.more()) {
-            std.debug.print("{d} x={d}, y={d}\n", .{ alg.current(), alg.x, alg.y });
+        while (hasMore) : ({
+            hasMore = alg.more();
+            i += 1;
+        }) {
+            const expected = &test_data_5[i];
+            try expectEqualSlices(u1, expected, alg.current());
         }
     }
+    try expectEqual(i, 31); // we visited all of them
 }
 
-const test_data_5_3 = [10][5]u1{
+test "*/5 CoolLex iterator interface" {
+    var buf: [test_data_n]u1 = undefined;
+    var i: usize = 0;
+    var k: u8 = 1;
+    while (k <= test_data_n) : (k += 1) {
+        var alg = CoolLex.init(test_data_n, k, &buf);
+        var iter = alg.iter();
+
+        while (iter.next()) |current| {
+            const expected = &test_data_5[i];
+            try expectEqualSlices(u1, expected, current);
+            i += 1;
+        }
+    }
+    try expectEqual(i, 31); // we visited all of them
+}
+
+const test_data_n = 5;
+const test_data_5 = [_][5]u1{
+    [_]u1{ 1, 0, 0, 0, 0 },
+    [_]u1{ 0, 1, 0, 0, 0 },
+    [_]u1{ 0, 0, 1, 0, 0 },
+    [_]u1{ 0, 0, 0, 1, 0 },
+    [_]u1{ 0, 0, 0, 0, 1 },
+
+    [_]u1{ 1, 1, 0, 0, 0 },
+    [_]u1{ 0, 1, 1, 0, 0 },
+    [_]u1{ 1, 0, 1, 0, 0 },
+    [_]u1{ 0, 1, 0, 1, 0 },
+    [_]u1{ 0, 0, 1, 1, 0 },
+    [_]u1{ 1, 0, 0, 1, 0 },
+    [_]u1{ 0, 1, 0, 0, 1 },
+    [_]u1{ 0, 0, 1, 0, 1 },
+    [_]u1{ 0, 0, 0, 1, 1 },
+    [_]u1{ 1, 0, 0, 0, 1 },
+
     [_]u1{ 1, 1, 1, 0, 0 },
     [_]u1{ 0, 1, 1, 1, 0 },
     [_]u1{ 1, 0, 1, 1, 0 },
@@ -114,42 +150,15 @@ const test_data_5_3 = [10][5]u1{
     [_]u1{ 0, 0, 1, 1, 1 },
     [_]u1{ 1, 0, 0, 1, 1 },
     [_]u1{ 1, 1, 0, 0, 1 },
+
+    [_]u1{ 1, 1, 1, 1, 0 },
+    [_]u1{ 0, 1, 1, 1, 1 },
+    [_]u1{ 1, 0, 1, 1, 1 },
+    [_]u1{ 1, 1, 0, 1, 1 },
+    [_]u1{ 1, 1, 1, 0, 1 },
+
+    [_]u1{ 1, 1, 1, 1, 1 },
 };
-
-test "CoolLex" {
-    var buf: [5]u1 = undefined;
-    var alg = CoolLex.init(5, 3, &buf);
-
-    var j: usize = 0;
-    var hasMore = true;
-    while (hasMore) : ({
-        hasMore = alg.more();
-        j += 1;
-    }) {
-        // call next and then visit another combination
-        try std.testing.expectEqualSlices(u1, &test_data_5_3[j], alg.current());
-    }
-    // next returns false
-    try std.testing.expectEqual(alg.more(), false);
-
-    // rewind to the start
-    alg.first();
-    try std.testing.expectEqualSlices(u1, &test_data_5_3[0], alg.current());
-}
-
-test "CoolLex iterator" {
-    var buf: [5]u1 = undefined;
-    var alg = CoolLex.init(5, 3, &buf);
-    var iter = alg.iter();
-
-    var j: usize = 0;
-    while (iter.next()) |current| {
-        try std.testing.expectEqualSlices(u1, &test_data_5_3[j], current);
-        j += 1;
-    }
-}
-
-const SKIP_SHOW_TESTS = true;
 
 pub const CoolLexBitStr = struct {
     limit_mask: usize,
@@ -188,8 +197,6 @@ pub const CoolLexBitStr = struct {
     }
 };
 
-const expectEqual = std.testing.expectEqual;
-
 test "CoolLexBitStr" {
     var cl = CoolLexBitStr.init(5, 3);
     try expectEqual(cl.next(), 0b00111);
@@ -206,24 +213,14 @@ test "CoolLexBitStr" {
     try expectEqual(cl.next(), null);
 }
 
-test "CoolLexBitStr show" {
-    if (SKIP_SHOW_TESTS) return error.SkipZigTest;
-
-    std.debug.print("\n", .{});
-    var cl = CoolLexBitStr.init(5, 3);
-    while (cl.next()) |c| {
-        std.debug.print("{b:0>5}\n", .{c});
-    }
-}
-
-pub fn bitArrayToIndices(bs: []const u1, ix: []u8) void {
+pub fn bitArrayToIndices(ba: []const u1, x: []u8) void {
     var j: usize = 0;
     var i: u8 = 0;
-    while (i < bs.len) : (i += 1) {
-        if (bs[i] == 1) {
-            ix[j] = i;
+    while (i < ba.len) : (i += 1) {
+        if (ba[i] == 1) {
+            x[j] = i;
             j += 1;
-            if (j == ix.len) {
+            if (j == x.len) {
                 return;
             }
         }
@@ -231,6 +228,18 @@ pub fn bitArrayToIndices(bs: []const u1, ix: []u8) void {
 }
 
 test "bitArrayToIndices" {
+    const bit_array = [10][5]u1{
+        [_]u1{ 1, 1, 1, 0, 0 },
+        [_]u1{ 0, 1, 1, 1, 0 },
+        [_]u1{ 1, 0, 1, 1, 0 },
+        [_]u1{ 1, 1, 0, 1, 0 },
+        [_]u1{ 0, 1, 1, 0, 1 },
+        [_]u1{ 1, 0, 1, 0, 1 },
+        [_]u1{ 0, 1, 0, 1, 1 },
+        [_]u1{ 0, 0, 1, 1, 1 },
+        [_]u1{ 1, 0, 0, 1, 1 },
+        [_]u1{ 1, 1, 0, 0, 1 },
+    };
     const indices = [10][3]u8{
         [_]u8{ 0, 1, 2 },
         [_]u8{ 1, 2, 3 },
@@ -243,12 +252,11 @@ test "bitArrayToIndices" {
         [_]u8{ 0, 3, 4 },
         [_]u8{ 0, 1, 4 },
     };
+    var x: [3]u8 = undefined;
 
-    var ix: [3]u8 = undefined;
-
-    for (test_data_5_3) |bs, i| {
-        bitArrayToIndices(&bs, &ix);
-        try std.testing.expectEqualSlices(u8, &indices[i], &ix);
+    for (bit_array) |ba, i| {
+        bitArrayToIndices(&ba, &x);
+        try std.testing.expectEqualSlices(u8, &indices[i], &x);
         //std.debug.print("{d}\n", .{ix});
     }
 }

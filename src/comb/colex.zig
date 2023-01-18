@@ -291,7 +291,7 @@ const test_data_5 = [_][5]u8{
 test "generate testdata" {
     if (true) return error.SkipZigTest;
 
-    var buf = [_]u8{0xff} ** 16;
+    var buf: [16]u8 = undefined;
     const n = 5;
     var k: u8 = 1;
     std.debug.print("\n", .{});

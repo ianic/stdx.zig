@@ -36,15 +36,16 @@ pub fn main() !void {
                 3 => try knuthCoLex(n, k),
                 4 => try knuthCoLexIter(n, k),
 
-                // returns bits array
-                5 => try coolLex(n, k),
-                6 => try coolLexIter(n, k), // alternative interface
-
                 // revolving door
-                7 => try revdoor(n, k),
+                5 => try revdoor(n, k),
+
+                // returns bits array
+                6 => try coolLex(n, k),
+                7 => try coolLexIter(n, k), // alternative interface
+                8 => try coolLexBitStr(n, k), // returns usize
 
                 // callback interface
-                8 => try lam(n, k),
+                9 => try lam(n, k),
                 else => unreachable,
             }
         }
@@ -144,6 +145,19 @@ pub fn coolLexIter(n: u8, k: u8) !void {
     }
     try expectEqual(comb.binomial(n, k), cnt);
     try expectEqual(@as(usize, n), prevent_optimization_u1.len);
+}
+
+var bit_str: usize = 0;
+pub fn coolLexBitStr(n: u8, k: u8) !void {
+    var alg = comb.CoolLexBitStr.init(n, k);
+
+    var cnt: usize = 0;
+    var iter = alg.iter();
+    while (iter.next()) |current| {
+        bit_str = current;
+        cnt += 1;
+    }
+    try expectEqual(comb.binomial(n, k), cnt);
 }
 
 pub fn revdoor(n: u8, k: u8) !void {
