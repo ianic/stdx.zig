@@ -6,30 +6,22 @@ const assert = std.debug.assert;
 const expectEqualSlices = std.testing.expectEqualSlices;
 const expectEqual = std.testing.expectEqual;
 
-fn arg2u8(pos: usize) !u6 {
-    const arg = std.os.argv[pos];
-    if (arg[1] == 0) {
-        return try std.fmt.parseUnsigned(u6, arg[0..1], 10);
-    }
-    if (arg[2] == 0) {
-        return try std.fmt.parseUnsigned(u6, arg[0..2], 10);
-    }
-    return try std.fmt.parseUnsigned(u6, arg[0..3], 10);
+fn readArg(comptime T: anytype, pos: usize, default: T) T {
+    const argv = std.os.argv;
+    if (pos >= argv.len) return default;
+    const arg = argv[pos];
+    return std.fmt.parseUnsigned(T, arg[0..std.mem.len(arg)], 10) catch default;
 }
 
 pub fn main() !void {
-    assert(std.os.argv.len > 5);
-
-    const alg = try arg2u8(1);
-    const n = try arg2u8(2);
-    const k_min = try arg2u8(3);
-    const k_max = try arg2u8(4);
-    const runs = try arg2u8(5);
+    const alg = readArg(usize, 1, 0);
+    const n = readArg(u6, 2, 20);
+    const k_min = readArg(u6, 3, 1);
+    const k_max = readArg(u6, 4, n);
+    const runs = readArg(usize, 5, 50);
 
     std.debug.print("alg: {d}, n: {d}, k_min: {d}, k_max: {d}, runs: {d}\n", .{ alg, n, k_min, k_max, runs });
-    //assert(alg < 5);
-    //assert(n > 4);
-    assert(k_min <= k_max and k_min >= 2 and k_max <= n);
+    assert(k_min <= k_max and k_min > 0 and k_max <= n);
 
     var r: u8 = 0;
     while (r < runs) : (r += 1) {
@@ -40,7 +32,7 @@ pub fn main() !void {
                 0 => try lex(n, k),
 
                 // co-lexicographical order
-                1 => try colex(n, k),
+                1 => try fxtCoLex(n, k),
                 2 => try knuthCoLex(n, k),
                 3 => try knuthCoLexIter(n, k),
 
@@ -77,8 +69,8 @@ pub fn lex(n: u6, k: u6) !void {
     try expectEqual(@as(usize, k), prevent_optimization.len);
 }
 
-pub fn colex(n: u6, k: u6) !void {
-    var l = comb.CoLex.init(n, k, &buf);
+pub fn fxtCoLex(n: u6, k: u6) !void {
+    var l = comb.FxtCoLex.init(n, k, &buf);
     var cnt: usize = 0;
     var hasMore = true;
     while (hasMore) : (hasMore = l.more()) {

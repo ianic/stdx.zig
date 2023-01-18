@@ -2,7 +2,7 @@ pub const binomial = @import("comb/binomial.zig").binomial;
 
 pub const Lex = @import("comb/lex.zig").Lex;
 
-pub const CoLex = @import("comb/colex.zig").CoLex;
+pub const FxtCoLex = @import("comb/colex.zig").FxtCoLex;
 pub const KnuthCoLex = @import("comb/colex.zig").KnuthCoLex;
 
 pub const CoolLex = @import("comb/cool_lex.zig").CoolLex;
