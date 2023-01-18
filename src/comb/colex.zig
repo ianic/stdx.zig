@@ -16,7 +16,8 @@ pub const FxtCoLex = struct {
     const Self = @This();
 
     pub fn init(n: u8, k: u8, buf: []u8) Self {
-        assert(n >= k and buf.len > k);
+        assert(k > 0 and n >= k and buf.len > k);
+
         var s = Self{
             .n = n,
             .k = k,
@@ -26,8 +27,6 @@ pub const FxtCoLex = struct {
         return s;
     }
 
-    // create first combination which will be unchanged in first call to move
-    // that will change only first sentinel
     pub fn first(s: *Self) void {
         var i: u8 = 0;
         while (i < s.k) : (i += 1) {

@@ -9,7 +9,7 @@ test {
 
 const std = @import("std");
 
-pub fn bench(name: []const u8, runs: usize,  handler: * const fn () anyerror!void) !void {
+pub fn bench(name: []const u8, runs: usize, handler: *const fn () anyerror!void) !void {
     const start = std.time.nanoTimestamp();
     var rns = runs;
     while (rns > 0) : (rns -= 1) {

@@ -1,4 +1,5 @@
 const std = @import("std");
+const iterator = @import("iterator.zig");
 
 const assert = std.debug.assert;
 const expectEqualSlices = std.testing.expectEqualSlices;
@@ -15,7 +16,7 @@ pub const Lex = struct {
     const Self = @This();
 
     pub fn init(n: u8, k: u8, buf: []u8) Self {
-        assert(n >= k and k > 0 and buf.len >= k);
+        assert(k > 0 and n >= k and buf.len >= k);
 
         var s = Self{
             .n = n,
@@ -78,6 +79,12 @@ pub const Lex = struct {
             s.x[j] = z;
         }
     }
+
+    const Iterator = iterator.Iterator(Lex, []u8);
+
+    pub fn iter(s: *Self) Iterator {
+        return Iterator{ .alg = s, .is_first = s.x[s.k - 1] == s.k - 1 };
+    }
 };
 
 const binomial = @import("binomial.zig").binomial;
@@ -98,13 +105,11 @@ test "3/5 Lex" {
 }
 
 test "*/5 Lex" {
-    const n = 5;
-    var buf: [n]u8 = undefined;
-
+    var buf: [test_data_n]u8 = undefined;
     var i: usize = 0;
     var k: u8 = 1;
-    while (k <= n) : (k += 1) {
-        var alg = Lex.init(n, k, &buf);
+    while (k <= test_data_n) : (k += 1) {
+        var alg = Lex.init(test_data_n, k, &buf);
         var hasMore = true;
 
         while (hasMore) : ({
@@ -117,6 +122,25 @@ test "*/5 Lex" {
     }
     try expectEqual(i, 31); // we visited all of them
 }
+
+test "*/5 Lex iterator interface" {
+    var buf: [test_data_n + 3]u8 = undefined;
+    var i: usize = 0;
+    var k: u8 = 1;
+    while (k <= test_data_n) : (k += 1) {
+        var alg = Lex.init(test_data_n, k, &buf);
+        var iter = alg.iter();
+
+        while (iter.next()) |current| {
+            const expected = test_data_5[i][0..k];
+            try expectEqualSlices(u8, expected, current);
+            i += 1;
+        }
+    }
+    try expectEqual(i, 31); // we visited all of them
+}
+
+const test_data_n = 5;
 // 0xff are unused, just tu have arrays of same len
 const test_data_5 = [_][5]u8{
     [_]u8{ 0, 0xff, 0xff, 0xff, 0xff },
