@@ -15,36 +15,36 @@ fn readArg(comptime T: anytype, pos: usize, default: T) T {
 
 pub fn main() !void {
     const alg = readArg(usize, 1, 0);
-    const n = readArg(u6, 2, 20);
-    const k_min = readArg(u6, 3, 1);
-    const k_max = readArg(u6, 4, n);
+    const n = readArg(u8, 2, 20);
+    const k_min = readArg(u8, 3, 2);
+    const k_max = readArg(u8, 4, n);
     const runs = readArg(usize, 5, 50);
 
-    std.debug.print("alg: {d}, n: {d}, k_min: {d}, k_max: {d}, runs: {d}\n", .{ alg, n, k_min, k_max, runs });
+    std.debug.print("algorithm no: {d}, n: {d}, k_min: {d}, k_max: {d}, runs: {d}\n", .{ alg, n, k_min, k_max, runs });
     assert(k_min <= k_max and k_min > 0 and k_max <= n);
 
     var r: u8 = 0;
     while (r < runs) : (r += 1) {
-        var k: u6 = k_min;
+        var k: u8 = k_min;
         while (k <= k_max) : (k += 1) {
             switch (alg) {
                 // lexicographical order
-                0 => try lex(n, k),
+                1 => try lex(n, k),
 
                 // co-lexicographical order
-                1 => try fxtCoLex(n, k),
-                2 => try knuthCoLex(n, k),
-                3 => try knuthCoLexIter(n, k),
+                2 => try fxtCoLex(n, k),
+                3 => try knuthCoLex(n, k),
+                4 => try knuthCoLexIter(n, k),
 
                 // returns bits array
-                4 => try coolLex(n, k),
-                5 => try coolLexIter(n, k), // alternative interface
+                5 => try coolLex(n, k),
+                6 => try coolLexIter(n, k), // alternative interface
 
                 // revolving door
-                6 => try revdoor(n, k),
+                7 => try revdoor(n, k),
 
                 // callback interface
-                7 => try lam(n, k),
+                8 => try lam(n, k),
                 else => unreachable,
             }
         }
@@ -57,7 +57,7 @@ var buf_u1: [MAX_N]u1 = undefined;
 var prevent_optimization: []u8 = undefined;
 var prevent_optimization_u1: []u1 = undefined;
 
-pub fn lex(n: u6, k: u6) !void {
+pub fn lex(n: u8, k: u8) !void {
     var l = comb.Lex.init(n, k, &buf);
     var cnt: usize = 0;
     var hasMore = true;
@@ -69,7 +69,7 @@ pub fn lex(n: u6, k: u6) !void {
     try expectEqual(@as(usize, k), prevent_optimization.len);
 }
 
-pub fn fxtCoLex(n: u6, k: u6) !void {
+pub fn fxtCoLex(n: u8, k: u8) !void {
     var l = comb.FxtCoLex.init(n, k, &buf);
     var cnt: usize = 0;
     var hasMore = true;
@@ -81,7 +81,7 @@ pub fn fxtCoLex(n: u6, k: u6) !void {
     try expectEqual(@as(usize, k), prevent_optimization.len);
 }
 
-pub fn knuthCoLex(n: u6, k: u6) !void {
+pub fn knuthCoLex(n: u8, k: u8) !void {
     var l = comb.KnuthCoLex.init(n, k, &buf);
     var cnt: usize = 0;
     var hasMore = true;
@@ -93,7 +93,7 @@ pub fn knuthCoLex(n: u6, k: u6) !void {
     try expectEqual(@as(usize, k), prevent_optimization.len);
 }
 
-pub fn knuthCoLexIter(n: u6, k: u6) !void {
+pub fn knuthCoLexIter(n: u8, k: u8) !void {
     var alg = comb.KnuthCoLex.init(n, k, &buf);
     var cnt: usize = 0;
     var iter = alg.iter();
@@ -105,7 +105,7 @@ pub fn knuthCoLexIter(n: u6, k: u6) !void {
     try expectEqual(@as(usize, k), prevent_optimization.len);
 }
 
-fn lam(n: u6, k: u6) !void {
+fn lam(n: u8, k: u8) !void {
     const CallbackWrapper = struct {
         cnt: usize = 0,
         const Self = @This();
@@ -120,7 +120,7 @@ fn lam(n: u6, k: u6) !void {
     try expectEqual(@as(usize, k), prevent_optimization.len);
 }
 
-pub fn coolLex(n: u6, k: u6) !void {
+pub fn coolLex(n: u8, k: u8) !void {
     var alg = comb.CoolLex.init(n, k, &buf_u1);
 
     var cnt: usize = 0;
@@ -133,7 +133,7 @@ pub fn coolLex(n: u6, k: u6) !void {
     try expectEqual(@as(usize, n), prevent_optimization_u1.len);
 }
 
-pub fn coolLexIter(n: u6, k: u6) !void {
+pub fn coolLexIter(n: u8, k: u8) !void {
     var alg = comb.CoolLex.init(n, k, &buf_u1);
 
     var cnt: usize = 0;
@@ -146,7 +146,7 @@ pub fn coolLexIter(n: u6, k: u6) !void {
     try expectEqual(@as(usize, n), prevent_optimization_u1.len);
 }
 
-pub fn revdoor(n: u6, k: u6) !void {
+pub fn revdoor(n: u8, k: u8) !void {
     var l = comb.RevDoor.init(n, k, &buf);
 
     var cnt: usize = 0;
