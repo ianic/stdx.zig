@@ -67,46 +67,39 @@ pub const FxtCoLex = struct {
     }
 };
 
-test "5/3 FxtCoLex" {
-    var buf: [4]u8 = undefined;
-    var alg = FxtCoLex.init(5, 3, &buf);
-
-    var j: u8 = 0;
-    var hasMore = true;
-    while (hasMore) : (hasMore = alg.more()) {
-        try expectEqualSlices(u8, &colex_test_data_5_3[j], alg.current());
-        j += 1;
-    }
-    try expectEqual(j, colex_test_data_5_3.len);
-
-    alg.first();
-
-    // iterator interface
-    var iter = alg.iter();
-    j = 0;
-    while (iter.next()) |current| {
-        try expectEqualSlices(u8, &colex_test_data_5_3[j], current);
-        j += 1;
-    }
-    try expectEqual(colex_test_data_5_3.len, j);
-}
-
-test "ensure working for each x/5" {
-    if (true) return error.SkipZigTest;
-
-    var buf: [16]u8 = undefined;
-    const n = 10;
+test "*/5 FxtCoLex" {
+    var buf: [test_data_n + 3]u8 = undefined;
+    var i: usize = 0;
     var k: u8 = 1;
-    std.debug.print("\n", .{});
-
-    while (k <= n) : (k += 1) {
-        std.debug.print("{d} / {d}\n", .{ k, n });
-        var alg = KnuthCoLex.init(n, k, &buf);
+    while (k <= test_data_n) : (k += 1) {
+        var alg = FxtCoLex.init(test_data_n, k, &buf);
         var hasMore = true;
-        while (hasMore) : (hasMore = alg.more()) {
-            std.debug.print("\t{d}\n", .{alg.current()});
+        while (hasMore) : ({
+            hasMore = alg.more();
+            i += 1;
+        }) {
+            const expected = test_data_5[i][0..k];
+            try expectEqualSlices(u8, expected, alg.current());
         }
     }
+    try expectEqual(i, 31); // we visited all of them
+}
+
+test "*/5 FxtCoLex iterator interface" {
+    var buf: [test_data_n + 3]u8 = undefined;
+    var i: usize = 0;
+    var k: u8 = 1;
+    while (k <= test_data_n) : (k += 1) {
+        var alg = FxtCoLex.init(test_data_n, k, &buf);
+        var iter = alg.iter();
+
+        while (iter.next()) |current| {
+            const expected = test_data_5[i][0..k];
+            try expectEqualSlices(u8, expected, current);
+            i += 1;
+        }
+    }
+    try expectEqual(i, 31); // we visited all of them
 }
 
 pub const KnuthCoLex = struct {
@@ -196,41 +189,121 @@ pub const KnuthCoLex = struct {
     }
 };
 
-test "3/5 Knuth CoLex" {
+test "3/5 KnuthCoLex" {
     var buf: [6]u8 = undefined;
     var alg = KnuthCoLex.init(5, 3, &buf);
 
     // raw interface
-    var j: u8 = 0;
+    var i: u8 = 15;
     var hasMore = true; // after init we have first combination in current
     while (hasMore) : (hasMore = alg.more()) { // loop with check at the end
-        try expectEqualSlices(u8, &colex_test_data_5_3[j], alg.current());
-        j += 1;
+        try expectEqualSlices(u8, test_data_5[i][0..3], alg.current());
+        i += 1;
     }
-    try expectEqual(colex_test_data_5_3.len, j); // we visited all of them
+    try expectEqual(i, 15 + 10); // we visited all of them
     try expectEqual(alg.more(), false); // all other calls to more returns false
 
     alg.first(); // rewind
 
     // iterator interface
     var iter = alg.iter();
-    j = 0;
+    i = 15;
     while (iter.next()) |current| {
-        try expectEqualSlices(u8, &colex_test_data_5_3[j], current);
-        j += 1;
+        try expectEqualSlices(u8, test_data_5[i][0..3], current);
+        i += 1;
     }
-    try expectEqual(colex_test_data_5_3.len, j);
+    try expectEqual(i, 15 + 10);
 }
 
-const colex_test_data_5_3 = [10][3]u8{
-    [_]u8{ 0, 1, 2 },
-    [_]u8{ 0, 1, 3 },
-    [_]u8{ 0, 2, 3 },
-    [_]u8{ 1, 2, 3 },
-    [_]u8{ 0, 1, 4 },
-    [_]u8{ 0, 2, 4 },
-    [_]u8{ 1, 2, 4 },
-    [_]u8{ 0, 3, 4 },
-    [_]u8{ 1, 3, 4 },
-    [_]u8{ 2, 3, 4 },
+test "*/5 KnuthCoLex" {
+    var buf: [test_data_n + 3]u8 = undefined;
+    var i: usize = 0;
+    var k: u8 = 1;
+    while (k <= test_data_n) : (k += 1) {
+        var alg = KnuthCoLex.init(test_data_n, k, &buf);
+        var hasMore = true;
+        while (hasMore) : ({
+            hasMore = alg.more();
+            i += 1;
+        }) {
+            const expected = test_data_5[i][0..k];
+            try expectEqualSlices(u8, expected, alg.current());
+        }
+    }
+    try expectEqual(i, 31); // we visited all of them
+}
+
+test "*/5 KnuthCoLex iterator interface" {
+    var buf: [test_data_n + 3]u8 = undefined;
+    var i: usize = 0;
+    var k: u8 = 1;
+    while (k <= test_data_n) : (k += 1) {
+        var alg = KnuthCoLex.init(test_data_n, k, &buf);
+        var iter = alg.iter();
+
+        while (iter.next()) |current| {
+            const expected = test_data_5[i][0..k];
+            try expectEqualSlices(u8, expected, current);
+            i += 1;
+        }
+    }
+    try expectEqual(i, 31); // we visited all of them
+}
+
+const test_data_n = 5;
+const test_data_5 = [_][5]u8{
+    [_]u8{ 0, 0xff, 0xff, 0xff, 0xff },
+    [_]u8{ 1, 0xff, 0xff, 0xff, 0xff },
+    [_]u8{ 2, 0xff, 0xff, 0xff, 0xff },
+    [_]u8{ 3, 0xff, 0xff, 0xff, 0xff },
+    [_]u8{ 4, 0xff, 0xff, 0xff, 0xff },
+
+    [_]u8{ 0, 1, 0xff, 0xff, 0xff },
+    [_]u8{ 0, 2, 0xff, 0xff, 0xff },
+    [_]u8{ 1, 2, 0xff, 0xff, 0xff },
+    [_]u8{ 0, 3, 0xff, 0xff, 0xff },
+    [_]u8{ 1, 3, 0xff, 0xff, 0xff },
+    [_]u8{ 2, 3, 0xff, 0xff, 0xff },
+    [_]u8{ 0, 4, 0xff, 0xff, 0xff },
+    [_]u8{ 1, 4, 0xff, 0xff, 0xff },
+    [_]u8{ 2, 4, 0xff, 0xff, 0xff },
+    [_]u8{ 3, 4, 0xff, 0xff, 0xff },
+
+    [_]u8{ 0, 1, 2, 0xff, 0xff },
+    [_]u8{ 0, 1, 3, 0xff, 0xff },
+    [_]u8{ 0, 2, 3, 0xff, 0xff },
+    [_]u8{ 1, 2, 3, 0xff, 0xff },
+    [_]u8{ 0, 1, 4, 0xff, 0xff },
+    [_]u8{ 0, 2, 4, 0xff, 0xff },
+    [_]u8{ 1, 2, 4, 0xff, 0xff },
+    [_]u8{ 0, 3, 4, 0xff, 0xff },
+    [_]u8{ 1, 3, 4, 0xff, 0xff },
+    [_]u8{ 2, 3, 4, 0xff, 0xff },
+
+    [_]u8{ 0, 1, 2, 3, 0xff },
+    [_]u8{ 0, 1, 2, 4, 0xff },
+    [_]u8{ 0, 1, 3, 4, 0xff },
+    [_]u8{ 0, 2, 3, 4, 0xff },
+    [_]u8{ 1, 2, 3, 4, 0xff },
+
+    [_]u8{ 0, 1, 2, 3, 4 },
 };
+
+test "generate testdata" {
+    if (true) return error.SkipZigTest;
+
+    var buf = [_]u8{0xff} ** 16;
+    const n = 5;
+    var k: u8 = 1;
+    std.debug.print("\n", .{});
+
+    while (k <= n) : (k += 1) {
+        var alg = KnuthCoLex.init(n, k, &buf);
+        var hasMore = true;
+        while (hasMore) : (hasMore = alg.more()) {
+            var print_buf = [_]u8{0xff} ** 5;
+            std.mem.copy(u8, &print_buf, alg.current());
+            std.debug.print("\t[_]u8{d},\n", .{print_buf});
+        }
+    }
+}

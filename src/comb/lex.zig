@@ -80,47 +80,78 @@ pub const Lex = struct {
     }
 };
 
+const binomial = @import("binomial.zig").binomial;
+
 test "3/5 Lex" {
     var buf: [3]u8 = undefined;
     var alg = Lex.init(5, 3, &buf);
 
-    var j: u8 = 0;
+    var i: u8 = 15;
     var hasMore = true;
     while (hasMore) : (hasMore = alg.more()) {
-        try expectEqualSlices(u8, &lex_test_data_5_3[j], alg.current());
-        j += 1;
+        const expected = test_data_5[i][0..3];
+        try expectEqualSlices(u8, expected, alg.current());
+        i += 1;
     }
-    try expectEqual(lex_test_data_5_3.len, j); // we visited all of them
+    try expectEqual(binomial(5, 3), i - 15); // we visited all of them
     try expectEqual(false, alg.more()); // all other calls to next returns null
 }
 
-test "3/5  ensure working k>2" {
-    //    if (true) return error.SkipZigTest;
-
-    var buf: [5]u8 = undefined;
+test "*/5 Lex" {
     const n = 5;
-    var k: u8 = 1;
+    var buf: [n]u8 = undefined;
 
-    std.debug.print("\n", .{});
+    var i: usize = 0;
+    var k: u8 = 1;
     while (k <= n) : (k += 1) {
-        std.debug.print("{d} / {d}\n", .{ k, n });
         var alg = Lex.init(n, k, &buf);
         var hasMore = true;
-        while (hasMore) : (hasMore = alg.more()) {
-            std.debug.print("\t{d}\n", .{alg.current()});
+
+        while (hasMore) : ({
+            hasMore = alg.more();
+            i += 1;
+        }) {
+            const expected = test_data_5[i][0..k];
+            try expectEqualSlices(u8, expected, alg.current());
         }
     }
+    try expectEqual(i, 31); // we visited all of them
 }
+// 0xff are unused, just tu have arrays of same len
+const test_data_5 = [_][5]u8{
+    [_]u8{ 0, 0xff, 0xff, 0xff, 0xff },
+    [_]u8{ 1, 0xff, 0xff, 0xff, 0xff },
+    [_]u8{ 2, 0xff, 0xff, 0xff, 0xff },
+    [_]u8{ 3, 0xff, 0xff, 0xff, 0xff },
+    [_]u8{ 4, 0xff, 0xff, 0xff, 0xff },
 
-const lex_test_data_5_3 = [10][3]u8{
-    [_]u8{ 0, 1, 2 },
-    [_]u8{ 0, 1, 3 },
-    [_]u8{ 0, 1, 4 },
-    [_]u8{ 0, 2, 3 },
-    [_]u8{ 0, 2, 4 },
-    [_]u8{ 0, 3, 4 },
-    [_]u8{ 1, 2, 3 },
-    [_]u8{ 1, 2, 4 },
-    [_]u8{ 1, 3, 4 },
-    [_]u8{ 2, 3, 4 },
+    [_]u8{ 0, 1, 0xff, 0xff, 0xff },
+    [_]u8{ 0, 2, 0xff, 0xff, 0xff },
+    [_]u8{ 0, 3, 0xff, 0xff, 0xff },
+    [_]u8{ 0, 4, 0xff, 0xff, 0xff },
+    [_]u8{ 1, 2, 0xff, 0xff, 0xff },
+    [_]u8{ 1, 3, 0xff, 0xff, 0xff },
+    [_]u8{ 1, 4, 0xff, 0xff, 0xff },
+    [_]u8{ 2, 3, 0xff, 0xff, 0xff },
+    [_]u8{ 2, 4, 0xff, 0xff, 0xff },
+    [_]u8{ 3, 4, 0xff, 0xff, 0xff },
+
+    [_]u8{ 0, 1, 2, 0xff, 0xff },
+    [_]u8{ 0, 1, 3, 0xff, 0xff },
+    [_]u8{ 0, 1, 4, 0xff, 0xff },
+    [_]u8{ 0, 2, 3, 0xff, 0xff },
+    [_]u8{ 0, 2, 4, 0xff, 0xff },
+    [_]u8{ 0, 3, 4, 0xff, 0xff },
+    [_]u8{ 1, 2, 3, 0xff, 0xff },
+    [_]u8{ 1, 2, 4, 0xff, 0xff },
+    [_]u8{ 1, 3, 4, 0xff, 0xff },
+    [_]u8{ 2, 3, 4, 0xff, 0xff },
+
+    [_]u8{ 0, 1, 2, 3, 0xff },
+    [_]u8{ 0, 1, 2, 4, 0xff },
+    [_]u8{ 0, 1, 3, 4, 0xff },
+    [_]u8{ 0, 2, 3, 4, 0xff },
+    [_]u8{ 1, 2, 3, 4, 0xff },
+
+    [_]u8{ 0, 1, 2, 3, 4 },
 };
