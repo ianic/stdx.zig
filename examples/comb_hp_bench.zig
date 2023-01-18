@@ -23,10 +23,12 @@ pub fn main() !void {
     std.debug.print("algorithm no: {d}, n: {d}, k_min: {d}, k_max: {d}, runs: {d}\n", .{ alg, n, k_min, k_max, runs });
     assert(k_min <= k_max and k_min > 0 and k_max <= n);
 
+    const n6 = @intCast(u6, n);             // remove cast from hot path
     var r: u8 = 0;
     while (r < runs) : (r += 1) {
         var k: u8 = k_min;
         while (k <= k_max) : (k += 1) {
+            const k6 = @intCast(u6, k);
             switch (alg) {
                 // lexicographical order
                 1 => try lex(n, k),
@@ -42,7 +44,7 @@ pub fn main() !void {
                 // returns bits array
                 6 => try coolLex(n, k),
                 7 => try coolLexIter(n, k), // alternative interface
-                8 => try coolLexBitStr(n, k), // returns usize
+                8 => try coolLexBitStr(n6, k6), // returns usize
 
                 // callback interface
                 9 => try lam(n, k),
@@ -148,12 +150,11 @@ pub fn coolLexIter(n: u8, k: u8) !void {
 }
 
 var bit_str: usize = 0;
-pub fn coolLexBitStr(n: u8, k: u8) !void {
-    var alg = comb.CoolLexBitStr.init(n, k);
+pub fn coolLexBitStr(n: u6, k: u6) !void {
+    var alg = comb.CoolLexBitStr.init(n,  k);
 
     var cnt: usize = 0;
-    var iter = alg.iter();
-    while (iter.next()) |current| {
+    while (alg.next()) |current| {
         bit_str = current;
         cnt += 1;
     }
