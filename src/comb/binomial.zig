@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const PASCAL_TRIANGLE = calcPascalTriangle();
-const MAX_N = 64;
+const MAX_N = 67; // for n = 68 we got u64 overflow for some values in triangle
 const PT_SIZE = (MAX_N * (MAX_N + 1)) / 2;
 
 fn calcPascalTriangle() [PT_SIZE]usize {
@@ -85,6 +85,7 @@ test "binomial" {
     try expectEqual(binomial(3, 1), 3);
     try expectEqual(binomial(3, 2), 3);
     try expectEqual(binomial(3, 3), 1);
+    try expectEqual(binomial(4, 2), 6);
 
     try expectEqual(binomial(7, 1), 7);
     try expectEqual(binomial(7, 2), 21);
@@ -98,12 +99,18 @@ test "binomial" {
 
     try expectEqual(binomial(33, 16), 1166803110);
     try expectEqual(binomial(64, 32), 1832624140942590534);
+    try expectEqual(binomial(65, 2), 2080);
+
+    // those goes to binomialCalc implementation
+    try expectEqual(binomial(68, 2), 2278);
+    try expectEqual(binomial(256, 2), 32640);
 }
 
 pub fn binomial(n: usize, k: usize) usize {
-    return PASCAL_TRIANGLE[position(n, k)];
+    if (n <= MAX_N)
+        return PASCAL_TRIANGLE[position(n, k)];
     // alternative implementation:
-    // return binomialCalc(r, n);
+    return binomialCalc(n, k);
 }
 
 // from fxtbook 6.1. (https://www.jjj.de/fxt/#fxtbook)

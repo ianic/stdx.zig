@@ -31,17 +31,17 @@ test "all data rows" {
     }
 }
 
-test "number of multiplications" {
+test "show number of multiplications" {
     // shows how many multiplications we had to do with this algorithm
     // vs brute force
-    // in brute force we have to make: (number of combinations)*(r-1) multiplications
+    // in brute force we have to make: (number of combinations)*(k-1) multiplications
     // in this: n|k + (n-1)|(k-1) ... (k-r+2)|2
     if (true) return error.SkipZigTest;
 
     const binomial = @import("binomial.zig").binomial;
 
     const s = struct {
-        fn multiplications(rc: usize, nc: usize) usize {
+        fn multiplications(nc: usize, rc: usize) usize {
             var r = rc;
             var n = nc;
             var s: usize = 0;
@@ -49,7 +49,7 @@ test "number of multiplications" {
                 r -= 1;
                 n -= 1;
             }) {
-                s += binomial(r, n);
+                s += binomial(n, r);
             }
             return s;
         }
