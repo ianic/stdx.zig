@@ -12,6 +12,7 @@ pub const CoolLex = @import("comb/cool_lex.zig").CoolLex;
 pub const CoolLexBitStr = @import("comb/cool_lex.zig").CoolLexBitStr;
 
 pub const SumOfProducts = @import("comb/sum_of_products.zig").SumOfProducts;
+pub const sumOfProducts = @import("comb/sum_of_products.zig").sumOfProducts;
 
 pub const lam = @import("comb/lam.zig").lamStatic;
 pub const lamProvided = @import("comb/lam.zig").lamProvided;
