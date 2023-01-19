@@ -6,6 +6,19 @@ const expectEqualSlices = std.testing.expectEqualSlices;
 const expectEqual = std.testing.expectEqual;
 
 // This is zig implementation of fxt/src/comb/combination-revdoor.h from fxtbook.
+// It is same as the one described in TAoCP, 7.2.1.3, algorithm R.
+//
+// Minimal-change order, Gray code, Revolving Door are all similar ideas.
+//
+// The Gray code, also known as the reflected binary code, is a combinatorial
+// algorithm that generates a sequence of binary numbers such that each number
+// in the sequence differs from its predecessor by only one bit.
+//
+// Why Revolving door name?
+// If we imagine two rooms that contain s and k people (s = n - k) with a
+// revolving door between them. Whenever a person goes into the opposite room
+// somebody elase comes out.
+//
 // fxtbook quotes:
 //   // A very efficient (revolving door) algorithm to generate the
 //   // sets for the Gray code is given comb in/combination-revdoor.h
